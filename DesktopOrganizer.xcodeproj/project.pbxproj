@@ -1,0 +1,431 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1B303537C7064571BDBE1894 /* MemoEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFC8073849C8731E3D39A06 /* MemoEditorSheet.swift */; };
+		20732BC52696915CA02F6C2E /* PlaneDetectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09A40CF17B1B5C1406306F5B /* PlaneDetectionService.swift */; };
+		3319B884998C79093F0F5063 /* DesktopOrganizerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BE59DE13DA16AABD4671C0A /* DesktopOrganizerApp.swift */; };
+		389277EBA4955BF17AB065E7 /* MemoLabelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3C0A1203B989609A372339 /* MemoLabelView.swift */; };
+		4844F1827F1491F3A238AAB8 /* OrganizerBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE68E338AE5ECB28AA6DC734 /* OrganizerBox.swift */; };
+		49326FB599DE53550C8108C7 /* ControlPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F8AAFBC8DC0CEB69212B2C /* ControlPanelView.swift */; };
+		4D185C6DEDAC2D79A13237B7 /* MemoLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63024AECA87A24528C6B14A2 /* MemoLabel.swift */; };
+		5D47023557F05202F70B43A0 /* ColorButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEB0BA8021802E54C5B63701 /* ColorButton.swift */; };
+		6887D305F7E4AC4B92239E2F /* MemoItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 391604CE21F36746DA33B6B4 /* MemoItem.swift */; };
+		6DC093EF89EF981F6E2D1BCD /* PlaneOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FAB40B190242F3669057DB8 /* PlaneOverlayView.swift */; };
+		894B9D1055751190922786F5 /* RealityKitContent in Frameworks */ = {isa = PBXBuildFile; productRef = 3813C2DD1A821824EE44FF98 /* RealityKitContent */; };
+		9F2FEE9C12076769157FF3CB /* BoxPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B124045133823D32DEEB63A /* BoxPayload.swift */; };
+		BC47E8951526FE16BC9E1CD2 /* SeedDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 704E07628E2F02E31E09F4D2 /* SeedDataService.swift */; };
+		C32CCCC8177F2BD15B3ADA7F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E99FF4774D6B335B8CE5954F /* Assets.xcassets */; };
+		DA681666A66FA728A2CDE820 /* BoxVolumeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB1D818FDF4EE715AA4AF96 /* BoxVolumeView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		09A40CF17B1B5C1406306F5B /* PlaneDetectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaneDetectionService.swift; sourceTree = "<group>"; };
+		289ABD1AC6926E07F631EF59 /* DesktopOrganizer.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = DesktopOrganizer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		391604CE21F36746DA33B6B4 /* MemoItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoItem.swift; sourceTree = "<group>"; };
+		63024AECA87A24528C6B14A2 /* MemoLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoLabel.swift; sourceTree = "<group>"; };
+		704E07628E2F02E31E09F4D2 /* SeedDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeedDataService.swift; sourceTree = "<group>"; };
+		74D6DB3D3B1CF5309F239FC5 /* RealityKitContent */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RealityKitContent; path = Packages/RealityKitContent; sourceTree = SOURCE_ROOT; };
+		7AB1D818FDF4EE715AA4AF96 /* BoxVolumeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoxVolumeView.swift; sourceTree = "<group>"; };
+		8B124045133823D32DEEB63A /* BoxPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoxPayload.swift; sourceTree = "<group>"; };
+		9BE59DE13DA16AABD4671C0A /* DesktopOrganizerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopOrganizerApp.swift; sourceTree = "<group>"; };
+		9F3C0A1203B989609A372339 /* MemoLabelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoLabelView.swift; sourceTree = "<group>"; };
+		9FAB40B190242F3669057DB8 /* PlaneOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaneOverlayView.swift; sourceTree = "<group>"; };
+		9FFC8073849C8731E3D39A06 /* MemoEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoEditorSheet.swift; sourceTree = "<group>"; };
+		C5F8AAFBC8DC0CEB69212B2C /* ControlPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlPanelView.swift; sourceTree = "<group>"; };
+		CF43FA94827D542D7414BBA9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		DEB0BA8021802E54C5B63701 /* ColorButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorButton.swift; sourceTree = "<group>"; };
+		E99FF4774D6B335B8CE5954F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		EE68E338AE5ECB28AA6DC734 /* OrganizerBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizerBox.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		49A5DA5AFD66DBBEC0FC52E5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				894B9D1055751190922786F5 /* RealityKitContent in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		1B0B678594DCC6B06907E14C = {
+			isa = PBXGroup;
+			children = (
+				A320F17049D07B1AEE56459F /* DesktopOrganizer */,
+				3D64E87DAA9B63459FBFFF39 /* Packages */,
+				6DC3791F5D64A2D66B1C6836 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		3D64E87DAA9B63459FBFFF39 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				74D6DB3D3B1CF5309F239FC5 /* RealityKitContent */,
+			);
+			path = Packages;
+			sourceTree = "<group>";
+		};
+		3D982BB8938112E224ACFA15 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				8B124045133823D32DEEB63A /* BoxPayload.swift */,
+				391604CE21F36746DA33B6B4 /* MemoItem.swift */,
+				63024AECA87A24528C6B14A2 /* MemoLabel.swift */,
+				EE68E338AE5ECB28AA6DC734 /* OrganizerBox.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		6DC3791F5D64A2D66B1C6836 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				289ABD1AC6926E07F631EF59 /* DesktopOrganizer.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		76B2E4DD0205C1788B823C92 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				09A40CF17B1B5C1406306F5B /* PlaneDetectionService.swift */,
+				704E07628E2F02E31E09F4D2 /* SeedDataService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A320F17049D07B1AEE56459F /* DesktopOrganizer */ = {
+			isa = PBXGroup;
+			children = (
+				FC4C8E016F9D561C65781E31 /* App */,
+				3D982BB8938112E224ACFA15 /* Models */,
+				ECAE27A2C736CCF0FCB6E984 /* Resources */,
+				76B2E4DD0205C1788B823C92 /* Services */,
+				A36A3F1DAF5A70BAC08651D8 /* Views */,
+			);
+			path = DesktopOrganizer;
+			sourceTree = "<group>";
+		};
+		A36A3F1DAF5A70BAC08651D8 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				7AB1D818FDF4EE715AA4AF96 /* BoxVolumeView.swift */,
+				DEB0BA8021802E54C5B63701 /* ColorButton.swift */,
+				C5F8AAFBC8DC0CEB69212B2C /* ControlPanelView.swift */,
+				9FFC8073849C8731E3D39A06 /* MemoEditorSheet.swift */,
+				9F3C0A1203B989609A372339 /* MemoLabelView.swift */,
+				9FAB40B190242F3669057DB8 /* PlaneOverlayView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		ECAE27A2C736CCF0FCB6E984 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				E99FF4774D6B335B8CE5954F /* Assets.xcassets */,
+				CF43FA94827D542D7414BBA9 /* Info.plist */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		FC4C8E016F9D561C65781E31 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				9BE59DE13DA16AABD4671C0A /* DesktopOrganizerApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		06771865F663F151DAE7013F /* DesktopOrganizer */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 43FFCE52E61EB5B260F5D504 /* Build configuration list for PBXNativeTarget "DesktopOrganizer" */;
+			buildPhases = (
+				91878AB55124535CAB8229C3 /* Sources */,
+				61AD8280A4FE9F059386DE51 /* Resources */,
+				49A5DA5AFD66DBBEC0FC52E5 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = DesktopOrganizer;
+			packageProductDependencies = (
+				3813C2DD1A821824EE44FF98 /* RealityKitContent */,
+			);
+			productName = DesktopOrganizer;
+			productReference = 289ABD1AC6926E07F631EF59 /* DesktopOrganizer.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		082D4E5EF6D72DD33C50A1DA /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					06771865F663F151DAE7013F = {
+						DevelopmentTeam = "";
+					};
+				};
+			};
+			buildConfigurationList = FB022EF6CE5ED44F9C999822 /* Build configuration list for PBXProject "DesktopOrganizer" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 1B0B678594DCC6B06907E14C;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				794203409C8156E645FCFE7D /* XCLocalSwiftPackageReference "Packages/RealityKitContent" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 6DC3791F5D64A2D66B1C6836 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				06771865F663F151DAE7013F /* DesktopOrganizer */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		61AD8280A4FE9F059386DE51 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C32CCCC8177F2BD15B3ADA7F /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		91878AB55124535CAB8229C3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9F2FEE9C12076769157FF3CB /* BoxPayload.swift in Sources */,
+				DA681666A66FA728A2CDE820 /* BoxVolumeView.swift in Sources */,
+				5D47023557F05202F70B43A0 /* ColorButton.swift in Sources */,
+				49326FB599DE53550C8108C7 /* ControlPanelView.swift in Sources */,
+				3319B884998C79093F0F5063 /* DesktopOrganizerApp.swift in Sources */,
+				1B303537C7064571BDBE1894 /* MemoEditorSheet.swift in Sources */,
+				6887D305F7E4AC4B92239E2F /* MemoItem.swift in Sources */,
+				4D185C6DEDAC2D79A13237B7 /* MemoLabel.swift in Sources */,
+				389277EBA4955BF17AB065E7 /* MemoLabelView.swift in Sources */,
+				4844F1827F1491F3A238AAB8 /* OrganizerBox.swift in Sources */,
+				20732BC52696915CA02F6C2E /* PlaneDetectionService.swift in Sources */,
+				6DC093EF89EF981F6E2D1BCD /* PlaneOverlayView.swift in Sources */,
+				BC47E8951526FE16BC9E1CD2 /* SeedDataService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		452DF66A8FC3E6B699E80219 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = DesktopOrganizer/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.bk.DesktopOrganizer;
+				SDKROOT = xros;
+				TARGETED_DEVICE_FAMILY = 7;
+			};
+			name = Release;
+		};
+		635C25C18BBD84D2E9AA9EC9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = xros;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+				XROS_DEPLOYMENT_TARGET = 2.0;
+			};
+			name = Debug;
+		};
+		CA803175D2C43355931DD0D3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = DesktopOrganizer/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.bk.DesktopOrganizer;
+				SDKROOT = xros;
+				TARGETED_DEVICE_FAMILY = 7;
+			};
+			name = Debug;
+		};
+		ECBE8A55BB7405A3087B3802 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = xros;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+				XROS_DEPLOYMENT_TARGET = 2.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		43FFCE52E61EB5B260F5D504 /* Build configuration list for PBXNativeTarget "DesktopOrganizer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CA803175D2C43355931DD0D3 /* Debug */,
+				452DF66A8FC3E6B699E80219 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		FB022EF6CE5ED44F9C999822 /* Build configuration list for PBXProject "DesktopOrganizer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				635C25C18BBD84D2E9AA9EC9 /* Debug */,
+				ECBE8A55BB7405A3087B3802 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		794203409C8156E645FCFE7D /* XCLocalSwiftPackageReference "Packages/RealityKitContent" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/RealityKitContent;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3813C2DD1A821824EE44FF98 /* RealityKitContent */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RealityKitContent;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 082D4E5EF6D72DD33C50A1DA /* Project object */;
+}

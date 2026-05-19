@@ -1,0 +1,21 @@
+#usda 1.0
+(
+    customLayerData = {
+        string creator = "Reality Composer Pro Version 2.0"
+    }
+    defaultPrim = "Root"
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "Root"
+{
+    def "TravelCase" (
+        active = true
+        prepend references = @TravelCase/1890s_Travel_Case.usdz@
+    )
+    {
+        float3 xformOp:scale = (0.003, 0.003, 0.003)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+}

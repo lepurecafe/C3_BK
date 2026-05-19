@@ -1,0 +1,26 @@
+name: DesktopOrganizer
+options:
+  bundleIdPrefix: com.bk
+  deploymentTarget:
+    visionOS: "2.0"
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    DEVELOPMENT_TEAM: ""
+packages:
+  RealityKitContent:
+    path: Packages/RealityKitContent
+targets:
+  DesktopOrganizer:
+    type: application
+    platform: visionOS
+    sources:
+      - DesktopOrganizer
+    dependencies:
+      - package: RealityKitContent
+        product: RealityKitContent
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bk.DesktopOrganizer
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: DesktopOrganizer/Resources/Info.plist
