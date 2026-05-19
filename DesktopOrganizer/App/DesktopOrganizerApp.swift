@@ -42,7 +42,7 @@ struct DesktopOrganizerApp: App {
         // BoxVolumeView 안에서 RealityKitContent의 TravelCaseScene 모델을 표시합니다.
         .windowStyle(.volumetric)
         .windowResizability(.contentSize)
-//        .defaultSize(width: 2.4, height: 2.35, depth: 10, in: .meters)
+        .defaultSize(width: 2.4, height: 2.35, depth: 10, in: .meters)
 
         // 메모는 값 기반 WindowGroup입니다.
         // MemoEditorSheet에서 openWindow(value: label)을 호출하면 이 Scene이 MemoLabelView를 새 창으로 띄웁니다.
