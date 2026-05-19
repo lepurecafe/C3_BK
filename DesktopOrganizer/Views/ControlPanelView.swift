@@ -67,11 +67,24 @@ struct ControlPanelView: View {
             MemoEditorSheet()
         }
         .task {
-            // ControlPanel이 화면에 나타나면 mixed ImmersiveSpace를 열어 공간 인식을 시작합니다.
-            // 실제 ARKit session 시작은 ImmersiveSpace 안의 PlaneOverlayView.task에서 일어납니다.
-            if !isSensingOpen {
-                isSensingOpen = true
-                await openImmersiveSpace(id: "sensing")
+            // UIApplicationSupportsMultipleScenes: true 로 인해 visionOS는 이전 실행의
+            // scene session을 복원합니다. ImmersiveSpace도 복원 대상이므로,
+            // 새 앱이 시작될 때 시스템이 space를 자동 복원하는 동시에 여기서 또 열려고 하면 충돌합니다.
+            // openImmersiveSpace 결과를 확인해서 이미 열려있는 경우를 처리합니다.
+            guard !isSensingOpen else { return }
+            isSensingOpen = true
+
+            let result = await openImmersiveSpace(id: "sensing")
+            switch result {
+            case .opened:
+                break
+            case .userCancelled:
+                isSensingOpen = false
+            case .error:
+                // scene restoration에 의해 space가 이미 관리되고 있는 경우이므로 열린 것으로 간주합니다.
+                break
+            @unknown default:
+                break
             }
         }
     }

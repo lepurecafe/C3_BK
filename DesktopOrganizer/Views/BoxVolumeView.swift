@@ -28,21 +28,21 @@ struct BoxVolumeView: View {
         // TravelCaseScene.usda가 실제 1890s_Travel_Case.usdz를 reference합니다.
         Model3D(named: "TravelCaseScene", bundle: realityKitContentBundle)
             // 좌우 드래그는 y축 회전으로, 위아래 드래그는 x축 회전으로 연결합니다.
-//            .rotation3DEffect(.degrees(horizontalRotation), axis: .y)
-//            .rotation3DEffect(.degrees(-verticalRotation), axis: .x)
-//            .gesture(
-//                DragGesture()
-//                    .onChanged { value in
+            .rotation3DEffect(.degrees(horizontalRotation), axis: .y)
+            .rotation3DEffect(.degrees(-verticalRotation), axis: .x)
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
 //                        // translation 값에 이전 누적 회전을 더해 자연스럽게 이어지는 회전을 만듭니다.
-//                        horizontalRotation = value.translation.width + endHorizontalRotation
-//                        verticalRotation = value.translation.height + endVerticalRotation
-//                    }
-//                    .onEnded { _ in
+                        horizontalRotation = value.translation.width + endHorizontalRotation
+                        verticalRotation = value.translation.height + endVerticalRotation
+                    }
+                    .onEnded { _ in
 //                        // 드래그가 끝난 지점을 다음 드래그의 시작 기준으로 저장합니다.
-//                        endHorizontalRotation = horizontalRotation
-//                        endVerticalRotation = verticalRotation
-//                    }
-//            )
+                        endHorizontalRotation = horizontalRotation
+                        endVerticalRotation = verticalRotation
+                    }
+            )
     }
 }
 

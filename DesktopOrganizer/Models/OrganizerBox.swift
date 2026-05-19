@@ -15,7 +15,7 @@ final class OrganizerBox {
     // @Query(sort:)에서 생성 순서대로 정렬할 때 사용합니다.
     var createdAt: Date
     // MVP에서는 아직 적극적으로 쓰지 않지만, 이후 박스 열림/닫힘 상태로 확장할 자리입니다.
-    var isOpen: Bool
+    var isOpen: Bool = false
 
     init(
         id: UUID = UUID(),
