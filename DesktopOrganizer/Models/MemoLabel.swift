@@ -19,7 +19,14 @@ struct MemoLabel: Hashable, Codable, Identifiable {
     // 저장 가능한 colorIndex를 실제 SwiftUI Color로 바꾸는 계산 함수입니다.
     // MemoLabelView는 이 함수를 통해 배경색을 결정합니다.
     func selectedColor() -> Color {
-        MemoLabel.colors[colorIndex]
+        // 저장 데이터는 앱 버전이 바뀐 뒤에도 남아 있을 수 있습니다.
+        // 예전 데이터의 colorIndex가 현재 colors 배열 범위를 벗어나면 crash가 날 수 있으므로,
+        // 잘못된 값은 첫 번째 색으로 안전하게 돌립니다.
+        guard MemoLabel.colors.indices.contains(colorIndex) else {
+            return MemoLabel.colors[0]
+        }
+
+        return MemoLabel.colors[colorIndex]
     }
 
     // 사용자가 고를 수 있는 MVP 색상 목록입니다.

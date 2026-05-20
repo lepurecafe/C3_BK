@@ -10,5 +10,17 @@
         "isLocked" : false
       }
     ]
+  },
+  "3FDDF614-6ADE-416C-B0F1-87A8B317CC8F" : {
+    "objectMetadataList" : [
+      [
+        "3FDDF614-6ADE-416C-B0F1-87A8B317CC8F",
+        "Root"
+      ],
+      {
+        "isExpanded" : true,
+        "isLocked" : false
+      }
+    ]
   }
 }

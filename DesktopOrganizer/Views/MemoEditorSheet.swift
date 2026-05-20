@@ -21,6 +21,7 @@ struct MemoEditorSheet: View {
     @State private var text = ""
     @State private var colorIndex = 0
     @State private var cornerRadius = 20.0
+    @State private var storageErrorMessage: String?
 
     // 입력 중인 값을 즉시 MemoLabel 형태로 바꿔 미리보기 라벨에 전달합니다.
     // 이 값은 저장용이 아니라 화면에 보여주기 위한 일시적인 값입니다.
@@ -87,6 +88,24 @@ struct MemoEditorSheet: View {
         }
         .padding(24)
         .frame(minWidth: 360)
+        .alert("저장 실패", isPresented: storageErrorBinding) {
+            Button("확인", role: .cancel) {
+                storageErrorMessage = nil
+            }
+        } message: {
+            Text(storageErrorMessage ?? "알 수 없는 오류가 발생했습니다.")
+        }
+    }
+
+    private var storageErrorBinding: Binding<Bool> {
+        Binding(
+            get: { storageErrorMessage != nil },
+            set: { isPresented in
+                if !isPresented {
+                    storageErrorMessage = nil
+                }
+            }
+        )
     }
 
     private func createMemo() {
@@ -102,7 +121,14 @@ struct MemoEditorSheet: View {
             cornerRadius: cornerRadius
         )
         modelContext.insert(memo)
-        try? modelContext.save()
+
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.delete(memo)
+            storageErrorMessage = error.localizedDescription
+            return
+        }
 
         // 저장 모델을 창 payload인 MemoLabel로 변환합니다.
         // openWindow(value:)는 이 값을 DesktopOrganizerApp의 MemoLabel WindowGroup으로 보냅니다.

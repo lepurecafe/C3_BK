@@ -15,9 +15,11 @@
 		49326FB599DE53550C8108C7 /* ControlPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F8AAFBC8DC0CEB69212B2C /* ControlPanelView.swift */; };
 		4D185C6DEDAC2D79A13237B7 /* MemoLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63024AECA87A24528C6B14A2 /* MemoLabel.swift */; };
 		5D47023557F05202F70B43A0 /* ColorButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEB0BA8021802E54C5B63701 /* ColorButton.swift */; };
+		5EFB0890F149057E545FE632 /* AppPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC2BA6403060F15FF148613F /* AppPreview.swift */; };
 		6887D305F7E4AC4B92239E2F /* MemoItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 391604CE21F36746DA33B6B4 /* MemoItem.swift */; };
 		6DC093EF89EF981F6E2D1BCD /* PlaneOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FAB40B190242F3669057DB8 /* PlaneOverlayView.swift */; };
 		894B9D1055751190922786F5 /* RealityKitContent in Frameworks */ = {isa = PBXBuildFile; productRef = 3813C2DD1A821824EE44FF98 /* RealityKitContent */; };
+		9C2AE510AA2A01CB196A9A96 /* DesktopOrganizerApp+Scenes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AF2CBBC79CE2E1F38FC26D5 /* DesktopOrganizerApp+Scenes.swift */; };
 		9F2FEE9C12076769157FF3CB /* BoxPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B124045133823D32DEEB63A /* BoxPayload.swift */; };
 		BC47E8951526FE16BC9E1CD2 /* SeedDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 704E07628E2F02E31E09F4D2 /* SeedDataService.swift */; };
 		C32CCCC8177F2BD15B3ADA7F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E99FF4774D6B335B8CE5954F /* Assets.xcassets */; };
@@ -29,6 +31,7 @@
 		289ABD1AC6926E07F631EF59 /* DesktopOrganizer.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = DesktopOrganizer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		391604CE21F36746DA33B6B4 /* MemoItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoItem.swift; sourceTree = "<group>"; };
 		63024AECA87A24528C6B14A2 /* MemoLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoLabel.swift; sourceTree = "<group>"; };
+		6AF2CBBC79CE2E1F38FC26D5 /* DesktopOrganizerApp+Scenes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopOrganizerApp+Scenes.swift"; sourceTree = "<group>"; };
 		704E07628E2F02E31E09F4D2 /* SeedDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeedDataService.swift; sourceTree = "<group>"; };
 		74D6DB3D3B1CF5309F239FC5 /* RealityKitContent */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RealityKitContent; path = Packages/RealityKitContent; sourceTree = SOURCE_ROOT; };
 		7AB1D818FDF4EE715AA4AF96 /* BoxVolumeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoxVolumeView.swift; sourceTree = "<group>"; };
@@ -38,6 +41,7 @@
 		9FAB40B190242F3669057DB8 /* PlaneOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaneOverlayView.swift; sourceTree = "<group>"; };
 		9FFC8073849C8731E3D39A06 /* MemoEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoEditorSheet.swift; sourceTree = "<group>"; };
 		C5F8AAFBC8DC0CEB69212B2C /* ControlPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlPanelView.swift; sourceTree = "<group>"; };
+		CC2BA6403060F15FF148613F /* AppPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPreview.swift; sourceTree = "<group>"; };
 		CF43FA94827D542D7414BBA9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		DEB0BA8021802E54C5B63701 /* ColorButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorButton.swift; sourceTree = "<group>"; };
 		E99FF4774D6B335B8CE5954F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -138,7 +142,9 @@
 		FC4C8E016F9D561C65781E31 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				CC2BA6403060F15FF148613F /* AppPreview.swift */,
 				9BE59DE13DA16AABD4671C0A /* DesktopOrganizerApp.swift */,
+				6AF2CBBC79CE2E1F38FC26D5 /* DesktopOrganizerApp+Scenes.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -218,10 +224,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5EFB0890F149057E545FE632 /* AppPreview.swift in Sources */,
 				9F2FEE9C12076769157FF3CB /* BoxPayload.swift in Sources */,
 				DA681666A66FA728A2CDE820 /* BoxVolumeView.swift in Sources */,
 				5D47023557F05202F70B43A0 /* ColorButton.swift in Sources */,
 				49326FB599DE53550C8108C7 /* ControlPanelView.swift in Sources */,
+				9C2AE510AA2A01CB196A9A96 /* DesktopOrganizerApp+Scenes.swift in Sources */,
 				3319B884998C79093F0F5063 /* DesktopOrganizerApp.swift in Sources */,
 				1B303537C7064571BDBE1894 /* MemoEditorSheet.swift in Sources */,
 				6887D305F7E4AC4B92239E2F /* MemoItem.swift in Sources */,

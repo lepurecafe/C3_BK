@@ -68,6 +68,8 @@ final class PlaneDetectionService {
 
         // PlaneAnchor의 transform에서 translation 성분만 꺼냅니다.
         // y를 0.05m 낮추는 것은 모델이 표면에 너무 떠 보이지 않게 조정하기 위한 MVP 값입니다.
+        // columns.3은 4x4 transform 행렬에서 위치(x, y, z)가 들어 있는 열입니다.
+        // 처음에는 "감지된 평면의 중심 좌표를 꺼낸다" 정도로 이해하면 충분합니다.
         let col = plane.originFromAnchorTransform.columns.3
         return (col.x, col.y - 0.05, col.z)
     }

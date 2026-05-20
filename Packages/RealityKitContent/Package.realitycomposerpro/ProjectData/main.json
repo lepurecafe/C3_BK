@@ -1,9 +1,11 @@
 {
   "pathsToIds" : {
-    "\/RealityKitContent\/Sources\/RealityKitContent\/RealityKitContent.rkassets\/TravelCaseScene.usda" : "30BEA66D-4C78-490D-B02F-6C79BEAC93E7"
+    "\/RealityKitContent\/Sources\/RealityKitContent\/RealityKitContent.rkassets\/TravelCaseScene.usda" : "30BEA66D-4C78-490D-B02F-6C79BEAC93E7",
+    "RealityKitContent\/Sources\/RealityKitContent\/RealityKitContent.rkassets\/TravelCaseScene.usda" : "3FDDF614-6ADE-416C-B0F1-87A8B317CC8F"
   },
   "projectID" : -5012837461920374821,
   "uuidToIntID" : {
-    "30BEA66D-4C78-490D-B02F-6C79BEAC93E7" : 3451209867432198541
+    "30BEA66D-4C78-490D-B02F-6C79BEAC93E7" : 3451209867432198541,
+    "3FDDF614-6ADE-416C-B0F1-87A8B317CC8F" : 4184386794683713899
   }
 }

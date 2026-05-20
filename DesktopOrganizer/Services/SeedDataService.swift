@@ -8,6 +8,10 @@ import SwiftData
 @MainActor
 enum SeedDataService {
     static func ensureReady(boxes: [OrganizerBox], context: ModelContext) {
-        // MVP에서는 seed 불필요. 사용자가 직접 생성한 박스와 메모만 저장한다.
+        // 지금은 호출되지 않는 준비 함수입니다.
+        // 나중에 "처음 실행하면 예시 박스 1개를 자동 생성" 같은 요구가 생기면
+        // boxes가 비어 있는지 확인하고 context.insert(...)를 넣는 위치가 됩니다.
+        _ = boxes
+        _ = context
     }
 }

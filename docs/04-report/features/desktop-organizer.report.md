@@ -7,6 +7,16 @@ Match Rate: 97%
 
 ---
 
+## Update Note
+
+2026-05-19 코드 리뷰 후속 수정 내역은 별도 handoff 문서에 정리됨:
+
+- `docs/04-report/features/desktop-organizer-review-fixes.md`
+
+해당 문서에는 SwiftData 저장 실패 처리, `MemoLabel.colorIndex` crash 방지, `openImmersiveSpace` error 처리, Reality Composer Pro ignore 정책, 남은 책상 위치 배치 이슈가 정리되어 있음.
+
+---
+
 ## Executive Summary
 
 | 항목 | 내용 |

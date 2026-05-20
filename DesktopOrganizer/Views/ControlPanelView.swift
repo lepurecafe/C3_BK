@@ -30,14 +30,12 @@ struct ControlPanelView: View {
     @State private var showMemoEditor = false
     // body가 다시 계산되어도 ImmersiveSpace를 반복해서 열지 않도록 막는 플래그입니다.
     @State private var isSensingOpen = false
+    @State private var showResetAlert = false
+    @State private var storageErrorMessage: String?
 
     var body: some View {
         VStack(spacing: 16) {
-            // PlaneDetectionService가 갱신하는 상태 문구입니다.
-            // PlaneOverlayView에서 ARKit update가 들어오면 이 텍스트가 바뀝니다.
-            Text(planeService.statusText)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            sensingStatusView
 
             HStack(spacing: 12) {
                 // 박스 생성 흐름:
@@ -61,30 +59,93 @@ struct ControlPanelView: View {
                 Divider()
                 reopenList
             }
+
+            #if DEBUG
+            Divider()
+            Button("데이터 초기화", role: .destructive) {
+                showResetAlert = true
+            }
+            .font(.caption)
+            .foregroundStyle(.red)
+            #endif
         }
         .padding(20)
+        .alert("데이터 초기화", isPresented: $showResetAlert) {
+            Button("취소", role: .cancel) {}
+            Button("전부 삭제", role: .destructive) {
+                resetAllData()
+            }
+        } message: {
+            Text("저장된 박스와 메모가 전부 삭제됩니다.")
+        }
+        .alert("저장 실패", isPresented: storageErrorBinding) {
+            Button("확인", role: .cancel) {
+                storageErrorMessage = nil
+            }
+        } message: {
+            Text(storageErrorMessage ?? "알 수 없는 오류가 발생했습니다.")
+        }
         .sheet(isPresented: $showMemoEditor) {
             MemoEditorSheet()
         }
-        .task {
-            // UIApplicationSupportsMultipleScenes: true 로 인해 visionOS는 이전 실행의
-            // scene session을 복원합니다. ImmersiveSpace도 복원 대상이므로,
-            // 새 앱이 시작될 때 시스템이 space를 자동 복원하는 동시에 여기서 또 열려고 하면 충돌합니다.
-            // openImmersiveSpace 결과를 확인해서 이미 열려있는 경우를 처리합니다.
-            guard !isSensingOpen else { return }
-            isSensingOpen = true
+    }
 
+    private var sensingStatusView: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(isSensingOpen ? .green : .gray)
+                    .frame(width: 8, height: 8)
+
+                // PlaneDetectionService가 갱신하는 상태 문구입니다.
+                // PlaneOverlayView에서 ARKit update가 들어오면 이 텍스트가 바뀝니다.
+                Text(planeService.statusText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if !isSensingOpen {
+                Button("공간 인식 시작") {
+                    startSensing()
+                }
+                .buttonStyle(.bordered)
+                .font(.caption)
+            }
+        }
+    }
+
+    private var storageErrorBinding: Binding<Bool> {
+        // SwiftUI의 alert(isPresented:)는 Binding<Bool>을 요구합니다.
+        // 우리는 실제 오류 문구를 String?으로 들고 있으므로,
+        // "문구가 있으면 alert를 보여준다"는 Bool 연결을 여기서 만들어 줍니다.
+        Binding(
+            get: { storageErrorMessage != nil },
+            set: { isPresented in
+                if !isPresented {
+                    storageErrorMessage = nil
+                }
+            }
+        )
+    }
+
+    private func startSensing() {
+        // 같은 ImmersiveSpace를 여러 번 열려고 하면 visionOS 상태가 꼬일 수 있으므로
+        // 이미 열려 있다고 표시된 경우에는 아무 일도 하지 않습니다.
+        guard !isSensingOpen else { return }
+        isSensingOpen = true
+
+        Task {
+            // openImmersiveSpace는 즉시 성공/실패를 돌려주는 비동기 작업입니다.
+            // 실패하면 사용자가 다시 누를 수 있도록 isSensingOpen을 false로 되돌립니다.
             let result = await openImmersiveSpace(id: "sensing")
             switch result {
             case .opened:
                 break
-            case .userCancelled:
+            case .userCancelled, .error:
                 isSensingOpen = false
-            case .error:
-                // scene restoration에 의해 space가 이미 관리되고 있는 경우이므로 열린 것으로 간주합니다.
-                break
+                planeService.statusText = "공간 인식 시작 실패"
             @unknown default:
-                break
+                isSensingOpen = false
             }
         }
     }
@@ -127,7 +188,14 @@ struct ControlPanelView: View {
         // 이 저장 덕분에 ControlPanel의 @Query 목록과 다음 앱 실행의 재열기 목록에 나타납니다.
         let box = OrganizerBox(name: "Box \(boxes.count + 1)")
         modelContext.insert(box)
-        try? modelContext.save()
+
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.delete(box)
+            storageErrorMessage = error.localizedDescription
+            return
+        }
 
         // 창을 여는 데 필요한 값만 payload로 포장합니다.
         // posX/Y/Z는 이후 실제 공간 배치나 WorldAnchor 저장으로 확장할 수 있는 자리입니다.
@@ -140,6 +208,19 @@ struct ControlPanelView: View {
         )
         // DesktopOrganizerApp의 WindowGroup(id: "boxWindow", for: BoxPayload.self)을 찾아 새 창을 엽니다.
         openWindow(id: "boxWindow", value: payload)
+    }
+
+    private func resetAllData() {
+        // @Query로 읽어온 현재 박스/메모를 모두 삭제합니다.
+        // delete만 호출하면 메모리상의 변경일 뿐이고, save가 성공해야 실제 저장소에 반영됩니다.
+        boxes.forEach { modelContext.delete($0) }
+        memos.forEach { modelContext.delete($0) }
+
+        do {
+            try modelContext.save()
+        } catch {
+            storageErrorMessage = error.localizedDescription
+        }
     }
 }
 

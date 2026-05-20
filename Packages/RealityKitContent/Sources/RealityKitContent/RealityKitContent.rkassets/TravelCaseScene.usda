@@ -15,7 +15,7 @@ def Xform "Root"
         prepend references = @TravelCase/1890s_Travel_Case.usdz@
     )
     {
-        float3 xformOp:scale = (0.003, 0.003, 0.003)
+        float3 xformOp:scale = (0.002, 0.002, 0.002)
         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
     }
 }

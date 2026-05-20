@@ -9,6 +9,10 @@ xcuserdata/
 .build/
 .swiftpm/xcode/xcuserdata/
 
+# Reality Composer Pro user/plugin workspace state
+*.rcuserdata
+**/Package.realitycomposerpro/PluginData/
+
 # Codex/BKit local workflow state
 .bkit/
 
