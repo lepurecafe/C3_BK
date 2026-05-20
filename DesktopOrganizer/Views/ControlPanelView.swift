@@ -40,7 +40,7 @@ struct ControlPanelView: View {
             HStack(spacing: 12) {
                 // 박스 생성 흐름:
                 // 버튼 탭 -> createBox() -> SwiftData 저장 -> BoxPayload 생성 -> boxWindow 열기
-                Button("박스 생성") {
+                Button("박스 등장") {
                     createBox()
                 }
                 .buttonStyle(.borderedProminent)
