@@ -47,7 +47,7 @@ struct ControlPanelView: View {
 
                 // 메모 생성 흐름:
                 // 버튼 탭 -> showMemoEditor true -> sheet 표시 -> MemoEditorSheet에서 Create 처리
-                Button("메모 생성") {
+                Button("메모 작성") {
                     showMemoEditor = true
                 }
                 .buttonStyle(.bordered)
