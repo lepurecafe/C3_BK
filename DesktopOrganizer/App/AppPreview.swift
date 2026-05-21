@@ -17,9 +17,10 @@ struct AppPreviewContainer: View {
                     Label("ControlPanel", systemImage: "slider.horizontal.3")
                 }
 
-            BoxVolumeView(payload: BoxPayload(name: "Preview Box"))
+            WorkspaceRealityView()
+                .modelContainer(for: [OrganizerBox.self, MemoItem.self], inMemory: true)
                 .tabItem {
-                    Label("Box", systemImage: "shippingbox")
+                    Label("Workspace", systemImage: "shippingbox")
                 }
 
             MemoEditorSheet()

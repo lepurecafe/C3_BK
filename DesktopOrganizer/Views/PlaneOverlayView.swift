@@ -10,9 +10,9 @@ struct PlaneOverlayView: View {
     @Environment(PlaneDetectionService.self) private var planeService
 
     var body: some View {
-        // 지금은 감지된 plane을 시각화하지 않으므로 비어 있는 RealityView를 둡니다.
-        // 이후 책상 위에 반투명 overlay를 표시하고 싶다면 이 클로저 안에서 Entity를 추가하면 됩니다.
-        RealityView { _ in }
+        // Phase A부터는 빈 RealityView 대신 WorkspaceRealityView를 둡니다.
+        // 이 View 안에서 volumetric window가 아닌 순수 RealityKit entity를 직접 표시합니다.
+        WorkspaceRealityView()
             .task {
                 // ImmersiveSpace가 열리면 ARKit 평면 감지가 시작됩니다.
                 // 감지 결과는 planeService.statusText와 detectedTablePlane에 저장됩니다.

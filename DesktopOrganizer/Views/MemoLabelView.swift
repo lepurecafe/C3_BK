@@ -6,6 +6,10 @@ import SwiftUI
 // - MemoEditorSheet: 작성 중인 미리보기
 // - MemoLabel WindowGroup: Create 후 공간에 뜨는 plain window
 struct MemoLabelView: View {
+    // 데이터 초기화가 발생하면 이미 떠 있는 메모 창도 같이 닫기 위해 공유 reset 신호를 봅니다.
+    @State private var workspaceStore = WorkspaceEntityStore.shared
+    // WindowGroup(for: MemoLabel.self)로 열린 현재 메모 창을 닫는 환경 함수입니다.
+    @Environment(\.dismissWindow) private var dismissWindow
     // .disabled(true) 상태인지 확인합니다.
     // 생성된 plain window에서는 disabled 상태로 사용해서 읽기 전용 라벨처럼 보이게 합니다.
     @Environment(\.isEnabled) private var isEnabled
@@ -30,6 +34,9 @@ struct MemoLabelView: View {
             .foregroundStyle(.black)
             .font(.system(size: 36, weight: .semibold))
             .multilineTextAlignment(.center)
+            .onChange(of: workspaceStore.resetRevision) {
+                dismissWindow(value: memo)
+            }
     }
 }
 

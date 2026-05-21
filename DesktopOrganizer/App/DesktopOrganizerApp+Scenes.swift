@@ -16,25 +16,12 @@ extension DesktopOrganizerApp {
         }
         // ControlPanel은 내용 크기만큼 작게 유지해서 도구 패널처럼 보이게 합니다.
         .windowResizability(.contentSize)
-        .defaultSize(width: 320, height: 200)
+        .defaultSize(width: 380, height: 420)
         // SwiftData 저장소를 앱에 연결합니다.
         // OrganizerBox와 MemoItem을 @Query로 읽고 modelContext.insert로 저장할 수 있게 됩니다.
         .modelContainer(for: [OrganizerBox.self, MemoItem.self])
         // ControlPanelView가 planeService.statusText와 tablePlaneOrigin을 읽을 수 있게 전달합니다.
         .environment(planeService)
-    }
-
-    var boxWindowScene: some Scene {
-        // "박스 생성" 버튼이 openWindow(id:value:)로 여는 volumetric window입니다.
-        // BoxPayload는 이 창에 전달되는 값이며, 현재는 이름과 위치 후보를 담습니다.
-        // id: "boxWindow"가 ControlPanelView의 openWindow(id: "boxWindow", value: ...)와 연결되는 이름입니다.
-        WindowGroup(id: "boxWindow", for: BoxPayload.self) { $payload in
-            BoxVolumeView(payload: payload)
-        }
-        // volumetric window는 3D 부피를 가진 창입니다.
-        // BoxVolumeView 안에서 RealityKitContent의 TravelCaseScene 모델을 표시합니다.
-        .windowStyle(.volumetric)
-        .defaultSize(width: 0.6, height: 0.6, depth: 0.6, in: .meters)
     }
 
     var memoWindowScene: some Scene {
@@ -65,6 +52,7 @@ extension DesktopOrganizerApp {
         .immersionStyle(selection: .constant(.mixed), in: .mixed)
         // PlaneOverlayView도 ControlPanelView와 같은 서비스 인스턴스를 사용해야
         // 감지 결과가 ControlPanel의 상태 텍스트와 박스 위치 계산에 반영됩니다.
+        .modelContainer(for: [OrganizerBox.self, MemoItem.self])
         .environment(planeService)
     }
 }

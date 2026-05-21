@@ -2,13 +2,10 @@ import RealityKit
 import RealityKitContent
 import SwiftUI
 
-// 3D 여행 가방을 보여주는 volumetric window의 내용입니다.
+// 예전 volumetric window 방식으로 3D 여행 가방을 보여주던 View입니다.
 //
-// 열리는 경로:
-// ControlPanelView.createBox()
-// -> openWindow(id: "boxWindow", value: BoxPayload)
-// -> DesktopOrganizerApp의 WindowGroup(id: "boxWindow")
-// -> BoxVolumeView(payload:)
+// 현재 앱의 실제 박스 흐름은 WorkspaceRealityView의 entity-only 방식입니다.
+// 이 파일은 비교/참고용으로 남아 있으며 DesktopOrganizerApp의 Scene에는 등록되어 있지 않습니다.
 struct BoxVolumeView: View {
     // 박스 창을 열 때 전달된 값입니다.
     // 현재 뷰는 모델 표시와 회전에 집중하고 있어 payload를 직접 렌더링하지는 않지만,
@@ -182,9 +179,4 @@ struct BoxVolumeView: View {
 
         return nil
     }
-}
-
-#Preview(windowStyle: .volumetric) {
-    // Preview에서도 volumetric window 스타일로 모델 크기와 회전 동작을 확인할 수 있게 합니다.
-    BoxVolumeView(payload: BoxPayload(name: "Preview Box"))
 }

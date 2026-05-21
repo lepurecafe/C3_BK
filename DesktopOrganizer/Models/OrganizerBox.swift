@@ -16,16 +16,37 @@ final class OrganizerBox {
     var createdAt: Date
     // MVP에서는 아직 적극적으로 쓰지 않지만, 이후 박스 열림/닫힘 상태로 확장할 자리입니다.
     var isOpen: Bool = false
+    // 사용자가 박스를 공간 안에서 옮긴 뒤 다시 열었을 때 복원할 위치입니다.
+    // 실제 WorldAnchor를 붙이기 전까지는 이 좌표가 anchor 후보 위치 역할을 합니다.
+    var posX: Float = 0
+    var posY: Float = 1.0
+    var posZ: Float = -1.0
+    // 박스별 앵커 UI의 ON/OFF 상태입니다.
+    // true이면 실제 WorldAnchor 또는 Simulator용 임시 잠금으로 보고 드래그 이동을 막습니다.
+    var isAnchored: Bool = false
+    // 실제 ARKit WorldAnchor 생성에 성공했을 때만 채워집니다.
+    // Simulator fallback처럼 임시 잠금만 적용된 경우에는 nil로 남습니다.
+    var worldAnchorIdentifier: String?
 
     init(
         id: UUID = UUID(),
         name: String,
         createdAt: Date = .now,
-        isOpen: Bool = false
+        isOpen: Bool = false,
+        posX: Float = 0,
+        posY: Float = 1.0,
+        posZ: Float = -1.0,
+        isAnchored: Bool = false,
+        worldAnchorIdentifier: String? = nil
     ) {
         self.id = id
         self.name = name
         self.createdAt = createdAt
         self.isOpen = isOpen
+        self.posX = posX
+        self.posY = posY
+        self.posZ = posZ
+        self.isAnchored = isAnchored
+        self.worldAnchorIdentifier = worldAnchorIdentifier
     }
 }

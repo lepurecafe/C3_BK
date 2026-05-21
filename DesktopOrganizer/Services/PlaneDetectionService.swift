@@ -14,12 +14,20 @@ final class PlaneDetectionService {
     // 현재 "책상 후보"로 보고 있는 horizontal PlaneAnchor입니다.
     // 이 앱은 아직 진짜 테이블 semantic 분류를 하지 않고, 충분히 큰 수평면을 책상 후보로 취급합니다.
     var detectedTablePlane: PlaneAnchor?
+    // WorldAnchor transform cache가 바뀔 때 WorkspaceRealityView가 다시 확인하도록 하는 revision입니다.
+    var worldAnchorRevision = 0
 
     // ARKitSession은 ARKit provider들을 실행하는 세션입니다.
     private var arkitSession = ARKitSession()
     // horizontal alignment만 요청합니다.
     // 책상, 바닥, 선반처럼 수평인 표면이 모두 들어올 수 있고, 아래 width 필터로 작은 평면을 걸러냅니다.
     private var planeDetection = PlaneDetectionProvider(alignments: [.horizontal])
+    // 박스 entity를 실제 공간 위치에 고정하기 위한 world tracking provider입니다.
+    // PlaneDetectionService가 ARKitSession을 이미 소유하므로 같은 session 안에서 같이 실행합니다.
+    private var worldTracking = WorldTrackingProvider()
+    private var worldAnchorsByBoxID: [UUID: WorldAnchor] = [:]
+    private var worldAnchorTransformsByID: [UUID: simd_float4x4] = [:]
+    private var worldAnchorUpdateTask: Task<Void, Never>?
 
     // PlaneOverlayView의 .task에서 호출됩니다.
     // 호출 후에는 anchorUpdates 비동기 시퀀스를 계속 기다리므로, 감지 결과가 들어올 때마다 상태가 갱신됩니다.
@@ -33,7 +41,12 @@ final class PlaneDetectionService {
 
         do {
             // 여기서 실제 ARKit 평면 감지가 시작됩니다.
-            try await arkitSession.run([planeDetection])
+            if WorldTrackingProvider.isSupported {
+                try await arkitSession.run([planeDetection, worldTracking])
+                startWorldAnchorUpdatesIfNeeded()
+            } else {
+                try await arkitSession.run([planeDetection])
+            }
 
             // ARKit이 평면을 추가/갱신/삭제할 때마다 update가 들어옵니다.
             for await update in planeDetection.anchorUpdates {
@@ -58,6 +71,63 @@ final class PlaneDetectionService {
         }
     }
 
+    func addWorldAnchor(for boxID: UUID, transform: simd_float4x4) async throws -> UUID {
+        guard WorldTrackingProvider.isSupported else {
+            throw WorldAnchorError.unsupported
+        }
+
+        if let existingAnchor = worldAnchorsByBoxID[boxID] {
+            try? await worldTracking.removeAnchor(existingAnchor)
+        }
+
+        let anchor = WorldAnchor(originFromAnchorTransform: transform)
+        try await worldTracking.addAnchor(anchor)
+        worldAnchorsByBoxID[boxID] = anchor
+        worldAnchorTransformsByID[anchor.id] = anchor.originFromAnchorTransform
+        worldAnchorRevision += 1
+        return anchor.id
+    }
+
+    func removeWorldAnchor(for boxID: UUID) async throws {
+        guard let anchor = worldAnchorsByBoxID[boxID] else {
+            return
+        }
+
+        try await worldTracking.removeAnchor(anchor)
+        worldAnchorsByBoxID[boxID] = nil
+        worldAnchorTransformsByID[anchor.id] = nil
+        worldAnchorRevision += 1
+    }
+
+    func worldAnchorTransform(for anchorIdentifier: String?) -> simd_float4x4? {
+        guard let anchorIdentifier,
+              let anchorID = UUID(uuidString: anchorIdentifier)
+        else {
+            return nil
+        }
+
+        return worldAnchorTransformsByID[anchorID]
+    }
+
+    private func startWorldAnchorUpdatesIfNeeded() {
+        guard worldAnchorUpdateTask == nil else {
+            return
+        }
+
+        worldAnchorUpdateTask = Task { @MainActor in
+            for await update in worldTracking.anchorUpdates {
+                switch update.event {
+                case .added, .updated:
+                    worldAnchorTransformsByID[update.anchor.id] = update.anchor.originFromAnchorTransform
+                    worldAnchorRevision += 1
+                case .removed:
+                    worldAnchorTransformsByID[update.anchor.id] = nil
+                    worldAnchorRevision += 1
+                }
+            }
+        }
+    }
+
     // 박스 생성 시 사용할 위치입니다.
     // 감지된 평면이 있으면 그 중심을 쓰고, 없으면 사용자 앞쪽의 기본 위치를 반환합니다.
     var tablePlaneOrigin: (x: Float, y: Float, z: Float) {
@@ -72,5 +142,16 @@ final class PlaneDetectionService {
         // 처음에는 "감지된 평면의 중심 좌표를 꺼낸다" 정도로 이해하면 충분합니다.
         let col = plane.originFromAnchorTransform.columns.3
         return (col.x, col.y - 0.05, col.z)
+    }
+}
+
+enum WorldAnchorError: LocalizedError {
+    case unsupported
+
+    var errorDescription: String? {
+        switch self {
+        case .unsupported:
+            "이 기기에서 WorldAnchor를 지원하지 않습니다."
+        }
     }
 }
