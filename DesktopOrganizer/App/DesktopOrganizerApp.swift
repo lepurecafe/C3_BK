@@ -6,7 +6,7 @@ import SwiftUI
 //
 // 전체 실행 흐름:
 // 1. 기본 WindowGroup이 ControlPanelView를 띄웁니다.
-// 2. 사용자가 ControlPanelView의 "공간 인식 시작" 버튼을 누르면 "sensing" ImmersiveSpace를 엽니다.
+// 2. 사용자가 ControlPanelView의 "공간 시작" 버튼을 누르면 "sensing" ImmersiveSpace를 엽니다.
 // 3. ImmersiveSpace 안의 PlaneOverlayView가 ARKit 평면 감지를 시작하고 WorkspaceRealityView가 entity 박스를 표시합니다.
 // 4. 박스와 메모는 WorkspaceRealityView 안의 entity/attachment로 표시됩니다.
 // 5. SwiftData modelContainer가 생성된 박스와 메모를 저장해 다음 실행 때 목록으로 복원합니다.

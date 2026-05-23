@@ -52,8 +52,11 @@ extension WorkspaceRealityView {
         }
 
         Task {
-            for memoID in memoIDs {
-                try? await planeService.removeWorldAnchor(forObjectID: memoID)
+            for memo in targets {
+                try? await planeService.removeWorldAnchor(
+                    forObjectID: memo.id,
+                    anchorIdentifier: memo.spatialWorldAnchorIdentifier
+                )
             }
 
             await MainActor.run {
@@ -104,7 +107,11 @@ extension WorkspaceRealityView {
 
     func deleteSpatialMemoPresentation(id: UUID) {
         Task {
-            try? await planeService.removeWorldAnchor(forObjectID: id)
+            let anchorIdentifier = memos.first { $0.id == id }?.spatialWorldAnchorIdentifier
+            try? await planeService.removeWorldAnchor(
+                forObjectID: id,
+                anchorIdentifier: anchorIdentifier
+            )
 
             await MainActor.run {
                 spatialMemoPresentations.removeAll { $0.id == id }
@@ -125,7 +132,11 @@ extension WorkspaceRealityView {
 
     func deleteMemoFromSpatialPresentation(_ presentation: SpatialMemoPresentation) {
         Task {
-            try? await planeService.removeWorldAnchor(forObjectID: presentation.id)
+            let anchorIdentifier = memos.first { $0.id == presentation.id }?.spatialWorldAnchorIdentifier
+            try? await planeService.removeWorldAnchor(
+                forObjectID: presentation.id,
+                anchorIdentifier: anchorIdentifier
+            )
 
             await MainActor.run {
                 spatialMemoPresentations.removeAll { $0.id == presentation.id }

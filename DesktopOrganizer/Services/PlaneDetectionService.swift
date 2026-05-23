@@ -10,7 +10,7 @@ import RealityKit
 @MainActor
 final class PlaneDetectionService {
     // ControlPanel 상단에 그대로 표시되는 감지 상태 문구입니다.
-    var statusText: String = "책상 인식 중..."
+    var statusText: String = "공간 시작 대기"
     // 현재 "책상 후보"로 보고 있는 horizontal PlaneAnchor입니다.
     // 이 앱은 아직 진짜 테이블 semantic 분류를 하지 않고, 충분히 큰 수평면을 책상 후보로 취급합니다.
     var detectedTablePlane: PlaneAnchor?
@@ -31,7 +31,9 @@ final class PlaneDetectionService {
     private var worldAnchorTransformsByID: [UUID: simd_float4x4] = [:]
     private var worldAnchorUpdateTask: Task<Void, Never>?
     private var pendingWorldAnchorRevisionTask: Task<Void, Never>?
+    private var pendingTablePlaneDebugRevisionTask: Task<Void, Never>?
     private var isDetectionRunning = false
+    private var detectionGeneration = 0
     private var lockedTablePlaneID: UUID?
 
     // PlaneOverlayView의 .task에서 호출됩니다.
@@ -50,10 +52,18 @@ final class PlaneDetectionService {
 
         do {
             isDetectionRunning = true
+            detectionGeneration += 1
+            let generation = detectionGeneration
+            defer {
+                if generation == detectionGeneration {
+                    isDetectionRunning = false
+                }
+            }
 
             // 여기서 실제 ARKit 평면 감지가 시작됩니다.
             if WorldTrackingProvider.isSupported {
                 try await arkitSession.run([planeDetection, worldTracking])
+                await refreshWorldAnchorCache()
                 startWorldAnchorUpdatesIfNeeded()
             } else {
                 try await arkitSession.run([planeDetection])
@@ -61,6 +71,13 @@ final class PlaneDetectionService {
 
             // ARKit이 평면을 추가/갱신/삭제할 때마다 update가 들어옵니다.
             for await update in planeDetection.anchorUpdates {
+                guard isDetectionRunning,
+                      generation == detectionGeneration,
+                      !Task.isCancelled
+                else {
+                    break
+                }
+
                 switch update.event {
                 case .added, .updated:
                     handlePlaneCandidate(update.anchor)
@@ -69,16 +86,39 @@ final class PlaneDetectionService {
                     if lockedTablePlaneID == update.anchor.id {
                         lockedTablePlaneID = nil
                         detectedTablePlane = nil
-                        tablePlaneDebugRevision += 1
+                        scheduleTablePlaneDebugRevisionUpdate()
                         statusText = "책상 후보 사라짐, 다시 인식 중..."
                     }
 
                 }
             }
         } catch {
-            isDetectionRunning = false
             statusText = "인식 실패: \(error.localizedDescription)"
         }
+    }
+
+    func stopDetection() {
+        isDetectionRunning = false
+        detectionGeneration += 1
+        arkitSession.stop()
+        worldAnchorUpdateTask?.cancel()
+        worldAnchorUpdateTask = nil
+        pendingWorldAnchorRevisionTask?.cancel()
+        pendingWorldAnchorRevisionTask = nil
+        pendingTablePlaneDebugRevisionTask?.cancel()
+        pendingTablePlaneDebugRevisionTask = nil
+
+        lockedTablePlaneID = nil
+        detectedTablePlane = nil
+        tablePlaneDebugRevision += 1
+
+        // Provider를 새로 만들어 다음 "공간 시작" 때 깨끗한 anchorUpdates sequence로 다시 시작합니다.
+        arkitSession = ARKitSession()
+        planeDetection = PlaneDetectionProvider(alignments: [.horizontal])
+        worldTracking = WorldTrackingProvider()
+        worldAnchorsByObjectID.removeAll()
+
+        statusText = "공간이 닫힘"
     }
 
     func requestTableRescan() {
@@ -88,13 +128,20 @@ final class PlaneDetectionService {
         statusText = "책상 다시 인식 중..."
     }
 
-    func addWorldAnchor(forObjectID objectID: UUID, transform: simd_float4x4) async throws -> UUID {
+    func addWorldAnchor(
+        forObjectID objectID: UUID,
+        replacingAnchorIdentifier anchorIdentifier: String? = nil,
+        transform: simd_float4x4
+    ) async throws -> UUID {
         guard WorldTrackingProvider.isSupported else {
             throw WorldAnchorError.unsupported
         }
 
         if let existingAnchor = worldAnchorsByObjectID[objectID] {
             try? await worldTracking.removeAnchor(existingAnchor)
+        } else if let existingAnchorID = uuid(from: anchorIdentifier) {
+            try? await worldTracking.removeAnchor(forID: existingAnchorID)
+            worldAnchorTransformsByID[existingAnchorID] = nil
         }
 
         let anchor = WorldAnchor(originFromAnchorTransform: transform)
@@ -105,14 +152,21 @@ final class PlaneDetectionService {
         return anchor.id
     }
 
-    func removeWorldAnchor(forObjectID objectID: UUID) async throws {
-        guard let anchor = worldAnchorsByObjectID[objectID] else {
+    func removeWorldAnchor(forObjectID objectID: UUID, anchorIdentifier: String? = nil) async throws {
+        if let anchor = worldAnchorsByObjectID[objectID] {
+            try await worldTracking.removeAnchor(anchor)
+            worldAnchorsByObjectID[objectID] = nil
+            worldAnchorTransformsByID[anchor.id] = nil
+            worldAnchorRevision += 1
             return
         }
 
-        try await worldTracking.removeAnchor(anchor)
-        worldAnchorsByObjectID[objectID] = nil
-        worldAnchorTransformsByID[anchor.id] = nil
+        guard let anchorID = uuid(from: anchorIdentifier) else {
+            return
+        }
+
+        try await worldTracking.removeAnchor(forID: anchorID)
+        worldAnchorTransformsByID[anchorID] = nil
         worldAnchorRevision += 1
     }
 
@@ -124,6 +178,23 @@ final class PlaneDetectionService {
         }
 
         return worldAnchorTransformsByID[anchorID]
+    }
+
+    func refreshWorldAnchorCache() async {
+        guard WorldTrackingProvider.isSupported,
+              let anchors = await worldTracking.allAnchors
+        else {
+            return
+        }
+
+        for anchor in anchors {
+            worldAnchorTransformsByID[anchor.id] = anchor.originFromAnchorTransform
+        }
+
+        if !anchors.isEmpty {
+            worldAnchorRevision += 1
+            statusText = "월드 앵커 \(anchors.count)개 복원됨"
+        }
     }
 
     private func startWorldAnchorUpdatesIfNeeded() {
@@ -157,7 +228,33 @@ final class PlaneDetectionService {
         }
     }
 
+    private func scheduleTablePlaneDebugRevisionUpdate() {
+        guard pendingTablePlaneDebugRevisionTask == nil else {
+            return
+        }
+
+        pendingTablePlaneDebugRevisionTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(80))
+            tablePlaneDebugRevision += 1
+            pendingTablePlaneDebugRevisionTask = nil
+        }
+    }
+
+    private func uuid(from anchorIdentifier: String?) -> UUID? {
+        guard let anchorIdentifier else {
+            return nil
+        }
+
+        return UUID(uuidString: anchorIdentifier)
+    }
+
     private func handlePlaneCandidate(_ plane: PlaneAnchor) {
+        if lockedTablePlaneID == plane.id {
+            detectedTablePlane = plane
+            scheduleTablePlaneDebugRevisionUpdate()
+            return
+        }
+
         selectTablePlaneIfNeeded(plane)
 
         if lockedTablePlaneID == nil {
@@ -174,7 +271,7 @@ final class PlaneDetectionService {
 
         lockedTablePlaneID = plane.id
         detectedTablePlane = plane
-        tablePlaneDebugRevision += 1
+        scheduleTablePlaneDebugRevisionUpdate()
         statusText = "책상 고정됨 ✓ \(formattedPlaneSize(plane))"
     }
 

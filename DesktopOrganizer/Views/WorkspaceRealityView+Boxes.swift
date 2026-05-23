@@ -270,9 +270,15 @@ extension WorkspaceRealityView {
     @MainActor
     func deleteBox(_ box: OrganizerBox) {
         Task {
-            try? await planeService.removeWorldAnchor(forObjectID: box.id)
+            try? await planeService.removeWorldAnchor(
+                forObjectID: box.id,
+                anchorIdentifier: box.worldAnchorIdentifier
+            )
             for memo in memos(in: box.id) {
-                try? await planeService.removeWorldAnchor(forObjectID: memo.id)
+                try? await planeService.removeWorldAnchor(
+                    forObjectID: memo.id,
+                    anchorIdentifier: memo.spatialWorldAnchorIdentifier
+                )
             }
 
             await MainActor.run {

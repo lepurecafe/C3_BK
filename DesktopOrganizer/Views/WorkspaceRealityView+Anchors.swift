@@ -77,7 +77,11 @@ extension WorkspaceRealityView {
         }
 
         let transform = boxRoot.transformMatrix(relativeTo: nil)
-        let anchorID = try await planeService.addWorldAnchor(forObjectID: boxID, transform: transform)
+        let anchorID = try await planeService.addWorldAnchor(
+            forObjectID: boxID,
+            replacingAnchorIdentifier: box.worldAnchorIdentifier,
+            transform: transform
+        )
         box.worldAnchorIdentifier = anchorID.uuidString
         try modelContext.save()
     }
@@ -89,7 +93,10 @@ extension WorkspaceRealityView {
         }
 
         if box.worldAnchorIdentifier != nil {
-            try await planeService.removeWorldAnchor(forObjectID: boxID)
+            try await planeService.removeWorldAnchor(
+                forObjectID: boxID,
+                anchorIdentifier: box.worldAnchorIdentifier
+            )
         }
 
         box.worldAnchorIdentifier = nil
@@ -192,7 +199,11 @@ extension WorkspaceRealityView {
         }
 
         let transform = transformMatrix(for: presentation.position)
-        let anchorID = try await planeService.addWorldAnchor(forObjectID: presentation.id, transform: transform)
+        let anchorID = try await planeService.addWorldAnchor(
+            forObjectID: presentation.id,
+            replacingAnchorIdentifier: memo.spatialWorldAnchorIdentifier,
+            transform: transform
+        )
         memo.spatialWorldAnchorIdentifier = anchorID.uuidString
         memo.spatialPosX = presentation.position.x
         memo.spatialPosY = presentation.position.y
@@ -203,7 +214,10 @@ extension WorkspaceRealityView {
     @MainActor
     func removeWorldAnchor(forSpatialMemo memo: MemoItem) async throws {
         if memo.spatialWorldAnchorIdentifier != nil {
-            try await planeService.removeWorldAnchor(forObjectID: memo.id)
+            try await planeService.removeWorldAnchor(
+                forObjectID: memo.id,
+                anchorIdentifier: memo.spatialWorldAnchorIdentifier
+            )
         }
 
         memo.spatialWorldAnchorIdentifier = nil

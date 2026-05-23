@@ -4,7 +4,7 @@ import SwiftUI
 // 앱을 실행했을 때 사용자가 처음 만나는 조작 패널입니다.
 //
 // 이 View의 책임:
-// 1. 앱 시작 후 사용자 입력을 방해하지 않는 시점에 책상 인식용 ImmersiveSpace를 엽니다.
+// 1. 사용자가 직접 책상 인식용 ImmersiveSpace를 시작하거나 종료할 수 있게 합니다.
 // 2. 사용자가 박스 이름을 입력하면 ImmersiveSpace 안에 entity 박스를 띄웁니다.
 // 3. DEBUG 빌드에서는 저장된 박스/메모 개수를 확인하고 데이터를 초기화할 수 있게 합니다.
 struct ControlPanelView: View {
@@ -15,6 +15,8 @@ struct ControlPanelView: View {
 
     // ARKit 평면 감지를 시작할 ImmersiveSpace를 여는 환경 함수입니다.
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
+    // 열린 ImmersiveSpace를 닫는 환경 함수입니다.
+    @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
     // DesktopOrganizerApp에서 environment로 전달한 공유 ARKit 서비스입니다.
     // statusText를 화면에 표시하고, 박스 생성 시 tablePlaneOrigin을 읽습니다.
     @Environment(PlaneDetectionService.self) private var planeService
@@ -67,13 +69,12 @@ struct ControlPanelView: View {
             #endif
         }
         .padding(20)
-        .task {
-            await openSensingAfterInitialInputWindow()
-        }
         .alert("데이터 초기화", isPresented: $showResetAlert) {
             Button("취소", role: .cancel) {}
             Button("전부 삭제", role: .destructive) {
-                resetAllData()
+                Task {
+                    await resetAllData()
+                }
             }
         } message: {
             Text("저장된 박스와 메모가 전부 삭제됩니다.")
@@ -101,10 +102,25 @@ struct ControlPanelView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Button(isSensingOpen ? "책상 다시 인식" : "공간 인식 시작") {
-                startSensing()
+            HStack(spacing: 10) {
+                if isSensingOpen {
+                    Button("공간 종료") {
+                        toggleSensingSpace()
+                    }
+                    .buttonStyle(.bordered)
+                } else {
+                    Button("공간 시작") {
+                        toggleSensingSpace()
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+
+                Button("책상 다시 인식") {
+                    requestTableRescan()
+                }
+                .buttonStyle(.bordered)
+                .disabled(!isSensingOpen)
             }
-            .buttonStyle(.bordered)
             .font(.caption)
 
             Text(controlStatusText)
@@ -177,11 +193,10 @@ struct ControlPanelView: View {
         )
     }
 
-    private func startSensing() {
+    private func toggleSensingSpace() {
         Task {
             if isSensingOpen {
-                planeService.requestTableRescan()
-                controlStatusText = "책상 다시 인식 요청"
+                await closeSensingSpace()
             } else if isOpeningSensing {
                 controlStatusText = "공간 여는 중..."
             } else {
@@ -190,18 +205,14 @@ struct ControlPanelView: View {
         }
     }
 
-    @MainActor
-    private func openSensingAfterInitialInputWindow() async {
-        // 앱 시작 직후 ImmersiveSpace/ARKit 초기화가 첫 TextField 입력과 겹치면 실기기에서
-        // 이름 입력 반응이 늦어질 수 있어, 초기 화면이 안정된 뒤에만 자동으로 공간 인식을 시작합니다.
-        try? await Task.sleep(for: .seconds(1.2))
-
-        guard panelMode == .home else {
-            controlStatusText = "이름 입력 후 공간 인식"
+    private func requestTableRescan() {
+        guard isSensingOpen else {
+            controlStatusText = "공간 시작 후 다시 인식 가능"
             return
         }
 
-        _ = await openSensingIfNeeded()
+        planeService.requestTableRescan()
+        controlStatusText = "책상 다시 인식 요청"
     }
 
     @MainActor
@@ -246,6 +257,15 @@ struct ControlPanelView: View {
             controlStatusText = "공간 상태 알 수 없음"
             return false
         }
+    }
+
+    @MainActor
+    private func closeSensingSpace() async {
+        controlStatusText = "공간 종료 중..."
+        planeService.stopDetection()
+        await dismissImmersiveSpace()
+        isSensingOpen = false
+        controlStatusText = "공간 종료됨"
     }
 
     private var storedItemsSummary: some View {
@@ -314,7 +334,24 @@ struct ControlPanelView: View {
         return SIMD3<Float>(origin.x + offsetX, origin.y, origin.z)
     }
 
-    private func resetAllData() {
+    @MainActor
+    private func resetAllData() async {
+        controlStatusText = "데이터 초기화 중..."
+
+        for box in boxes {
+            try? await planeService.removeWorldAnchor(
+                forObjectID: box.id,
+                anchorIdentifier: box.worldAnchorIdentifier
+            )
+        }
+
+        for memo in memos {
+            try? await planeService.removeWorldAnchor(
+                forObjectID: memo.id,
+                anchorIdentifier: memo.spatialWorldAnchorIdentifier
+            )
+        }
+
         // @Query로 읽어온 현재 박스/메모를 모두 삭제합니다.
         // delete만 호출하면 메모리상의 변경일 뿐이고, save가 성공해야 실제 저장소에 반영됩니다.
         boxes.forEach { modelContext.delete($0) }
