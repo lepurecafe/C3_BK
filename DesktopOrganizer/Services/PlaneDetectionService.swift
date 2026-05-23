@@ -14,6 +14,8 @@ final class PlaneDetectionService {
     // 현재 "책상 후보"로 보고 있는 horizontal PlaneAnchor입니다.
     // 이 앱은 아직 진짜 테이블 semantic 분류를 하지 않고, 충분히 큰 수평면을 책상 후보로 취급합니다.
     var detectedTablePlane: PlaneAnchor?
+    // 감지된 책상 후보 평면이 바뀔 때 RealityView의 디버그 시각화를 갱신하기 위한 값입니다.
+    var tablePlaneDebugRevision = 0
     // WorldAnchor transform cache가 바뀔 때 WorkspaceRealityView가 다시 확인하도록 하는 revision입니다.
     var worldAnchorRevision = 0
 
@@ -56,12 +58,14 @@ final class PlaneDetectionService {
                     // 폭이 0.3m보다 큰 수평면이면 책상으로 쓸 수 있다고 보고 저장합니다.
                     if update.anchor.geometry.extent.width > 0.3 {
                         detectedTablePlane = update.anchor
-                        statusText = "책상 감지됨 ✓"
+                        tablePlaneDebugRevision += 1
+                        statusText = "책상 감지됨 ✓ \(formattedPlaneSize(update.anchor))"
                     }
                 case .removed:
                     // 지금 쓰고 있던 평면이 사라지면 fallback 상태로 돌아갑니다.
                     if detectedTablePlane?.id == update.anchor.id {
                         detectedTablePlane = nil
+                        tablePlaneDebugRevision += 1
                         statusText = "책상 인식 중..."
                     }
                 }
@@ -142,6 +146,12 @@ final class PlaneDetectionService {
         // 처음에는 "감지된 평면의 중심 좌표를 꺼낸다" 정도로 이해하면 충분합니다.
         let col = plane.originFromAnchorTransform.columns.3
         return (col.x, col.y - 0.05, col.z)
+    }
+
+    private func formattedPlaneSize(_ plane: PlaneAnchor) -> String {
+        let width = plane.geometry.extent.width
+        let depth = plane.geometry.extent.height
+        return String(format: "%.2fm x %.2fm", width, depth)
     }
 }
 

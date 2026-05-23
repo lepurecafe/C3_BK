@@ -6,15 +6,17 @@ import SwiftUI
 
 // ImmersiveSpace 안에서 실제 공간 오브젝트들을 직접 관리할 RealityKit 화면입니다.
 //
-// Phase A의 목표는 "박스를 volumetric window 밖으로 꺼내서 entity로 표시할 수 있는가"를
-// 먼저 확인하는 것입니다. 그래서 이 View는 아직 WorldAnchor나 SwiftData 저장을 붙이지 않고,
-// TravelCaseScene entity 하나를 사용자 앞 공간에 직접 배치합니다.
+// 저장된 OrganizerBox와 WorkspaceEntityStore 요청을 읽어 TravelCase entity를 만들고,
+// 탭/드래그/앵커/메모 목록 attachment/평면 디버그 시각화를 한곳에서 연결합니다.
+// 박스는 volumetric window가 아니라 ImmersiveSpace 안의 실제 공간 entity로 운용됩니다.
 struct WorkspaceRealityView: View {
     private let selectedBoxControlAttachmentID = "SelectedBoxControls"
 
+    @Environment(\.openWindow) private var openWindow
     @Environment(\.modelContext) private var modelContext
     @Environment(PlaneDetectionService.self) private var planeService
     @Query(sort: \OrganizerBox.createdAt) private var persistedBoxes: [OrganizerBox]
+    @Query(sort: \MemoItem.createdAt) private var memos: [MemoItem]
 
     @State private var workspaceStore = WorkspaceEntityStore.shared
     @State private var rootEntity: Entity?
@@ -25,6 +27,7 @@ struct WorkspaceRealityView: View {
     @State private var animationControllers: [UUID: AnimationPlaybackController] = [:]
     @State private var animationTasks: [UUID: Task<Void, Never>] = [:]
     @State private var dragStartPositions: [UUID: SIMD3<Float>] = [:]
+    @State private var tablePlaneDebugEntity: ModelEntity?
 
     var body: some View {
         RealityView { content, attachments in
@@ -33,9 +36,11 @@ struct WorkspaceRealityView: View {
             rootEntity = root
             content.add(root)
 
-            updateSelectedBoxControls(in: content, attachments: attachments)
+            updateSelectedBoxControls(attachments: attachments)
+            updateOpenBoxMemoLists(attachments: attachments)
         } update: { content, attachments in
-            updateSelectedBoxControls(in: content, attachments: attachments)
+            updateSelectedBoxControls(attachments: attachments)
+            updateOpenBoxMemoLists(attachments: attachments)
         } attachments: {
             Attachment(id: selectedBoxControlAttachmentID) {
                 if let selectedBoxID = workspaceStore.selectedBoxID {
@@ -48,6 +53,17 @@ struct WorkspaceRealityView: View {
                     }
                 }
             }
+
+            ForEach(persistedBoxes) { box in
+                Attachment(id: memoListAttachmentID(for: box.id)) {
+                    BoxMemoAttachmentView(
+                        boxName: box.name,
+                        memos: memos(in: box.id)
+                    ) { memo in
+                        openMemoWindow(memo)
+                    }
+                }
+            }
         }
         .task(id: renderRevision) {
             await renderKnownBoxes()
@@ -57,6 +73,9 @@ struct WorkspaceRealityView: View {
         }
         .task(id: planeService.worldAnchorRevision) {
             applyKnownWorldAnchorTransforms()
+        }
+        .task(id: planeService.tablePlaneDebugRevision) {
+            updateTablePlaneDebugOverlay()
         }
         .simultaneousGesture(
             TapGesture()
@@ -137,6 +156,8 @@ struct WorkspaceRealityView: View {
         animationControllers.removeAll()
         animationTasks.removeAll()
         dragStartPositions.removeAll()
+        tablePlaneDebugEntity?.removeFromParent()
+        tablePlaneDebugEntity = nil
     }
 
     @MainActor
@@ -199,6 +220,42 @@ struct WorkspaceRealityView: View {
         worldAnchorPosition(for: box) ?? SIMD3<Float>(box.posX, box.posY, box.posZ)
     }
 
+    @MainActor
+    private func updateTablePlaneDebugOverlay() {
+        guard let rootEntity else {
+            return
+        }
+
+        guard let tablePlane = planeService.detectedTablePlane else {
+            tablePlaneDebugEntity?.removeFromParent()
+            tablePlaneDebugEntity = nil
+            return
+        }
+
+        let width = max(tablePlane.geometry.extent.width, 0.1)
+        let depth = max(tablePlane.geometry.extent.height, 0.1)
+        let mesh = MeshResource.generatePlane(width: width, depth: depth)
+        let material = SimpleMaterial(
+            color: .cyan.withAlphaComponent(0.28),
+            roughness: 0.7,
+            isMetallic: false
+        )
+
+        let debugEntity = tablePlaneDebugEntity ?? ModelEntity()
+        debugEntity.name = "DebugTablePlane"
+        debugEntity.model = ModelComponent(mesh: mesh, materials: [material])
+        debugEntity.transform.matrix = tablePlane.originFromAnchorTransform
+
+        // 감지된 평면과 완전히 같은 높이에 두면 z-fighting처럼 깜빡일 수 있어 아주 조금 위로 올립니다.
+        debugEntity.position.y += 0.003
+
+        if debugEntity.parent == nil {
+            rootEntity.addChild(debugEntity)
+        }
+
+        tablePlaneDebugEntity = debugEntity
+    }
+
     private func worldAnchorPosition(for box: OrganizerBox) -> SIMD3<Float>? {
         guard let transform = planeService.worldAnchorTransform(for: box.worldAnchorIdentifier) else {
             return nil
@@ -219,11 +276,22 @@ struct WorkspaceRealityView: View {
         if workspaceStore.isBoxOpen(boxID) {
             closeBox(id: boxID, entity: entity, animation: animation)
         } else {
-            openBox(id: boxID, mode: .openForLookup, entity: entity, animation: animation)
+            openBox(
+                id: boxID,
+                mode: .openForLookup,
+                entity: entity,
+                animation: animation
+            )
         }
     }
 
-    private func openBox(id: UUID, mode: BoxInteractionMode, entity: Entity, animation: AnimationResource) {
+    private func openBox(
+        id: UUID,
+        mode: BoxInteractionMode,
+        entity: Entity,
+        animation: AnimationResource,
+        onOpened: (() -> Void)? = nil
+    ) {
         animationTasks[id]?.cancel()
         animationControllers[id]?.stop()
 
@@ -244,6 +312,7 @@ struct WorkspaceRealityView: View {
             controller.pause()
             controller.time = duration
             workspaceStore.setInteractionMode(mode, for: id)
+            onOpened?()
         }
     }
 
@@ -415,7 +484,44 @@ struct WorkspaceRealityView: View {
         }
     }
 
-    private func updateSelectedBoxControls(in content: RealityViewContent, attachments: RealityViewAttachments) {
+    private func memos(in boxID: UUID) -> [MemoItem] {
+        memos.filter { $0.containerBoxID == boxID }
+    }
+
+    private func openMemoWindow(_ memo: MemoItem) {
+        openWindow(
+            value: MemoLabel(
+                id: memo.id,
+                text: memo.text,
+                colorIndex: memo.colorIndex,
+                cornerRadius: memo.cornerRadius
+            )
+        )
+    }
+
+    private func updateOpenBoxMemoLists(attachments: RealityViewAttachments) {
+        for box in persistedBoxes {
+            let attachmentID = memoListAttachmentID(for: box.id)
+
+            guard workspaceStore.interactionMode(for: box.id) == .openForLookup,
+                  let boxRoot = boxRoots[box.id],
+                  let memoList = attachments.entity(for: attachmentID)
+            else {
+                attachments.entity(for: attachmentID)?.removeFromParent()
+                continue
+            }
+
+            if memoList.parent !== boxRoot {
+                memoList.removeFromParent()
+                boxRoot.addChild(memoList)
+            }
+
+            // 박스 root의 자식으로 두면 사용자가 박스를 드래그할 때 목록 패널도 같은 transform을 따라갑니다.
+            memoList.position = SIMD3<Float>(0, 0.34, 0)
+        }
+    }
+
+    private func updateSelectedBoxControls(attachments: RealityViewAttachments) {
         guard let selectedBoxID = workspaceStore.selectedBoxID,
               let selectedBoxRoot = boxRoots[selectedBoxID],
               let controls = attachments.entity(for: selectedBoxControlAttachmentID)
@@ -424,11 +530,13 @@ struct WorkspaceRealityView: View {
             return
         }
 
-        if controls.parent == nil {
-            content.add(controls)
+        if controls.parent !== selectedBoxRoot {
+            controls.removeFromParent()
+            selectedBoxRoot.addChild(controls)
         }
 
-        controls.position = selectedBoxRoot.position + SIMD3<Float>(0, -0.12, 0.17)
+        // 박스 root의 자식으로 두어 드래그 중에도 앵커 버튼이 박스와 같이 움직이게 합니다.
+        controls.position = SIMD3<Float>(0, -0.12, 0.17)
     }
 
     private func firstAvailableAnimation(in entity: Entity) -> AnimationResource? {
@@ -469,6 +577,10 @@ struct WorkspaceRealityView: View {
     private func boxEntityName(for id: UUID) -> String {
         "WorkspaceBox:\(id.uuidString)"
     }
+
+    private func memoListAttachmentID(for id: UUID) -> String {
+        "BoxMemoList:\(id.uuidString)"
+    }
 }
 
 private struct BoxAnchorControlView: View {
@@ -490,6 +602,57 @@ private struct BoxAnchorControlView: View {
         .buttonStyle(.borderedProminent)
         .tint(isAnchored ? .green : .gray)
         .glassBackgroundEffect()
+    }
+}
+
+private struct BoxMemoAttachmentView: View {
+    let boxName: String
+    let memos: [MemoItem]
+    let onMemoSelected: (MemoItem) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(boxName)
+                .font(.headline)
+
+            if memos.isEmpty {
+                Text("박스 안에 메모가 없습니다.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(memos) { memo in
+                    Button {
+                        onMemoSelected(memo)
+                    } label: {
+                        HStack(spacing: 8) {
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(MemoLabel.colors[memo.workspaceSafeColorIndex])
+                                .frame(width: 12, height: 12)
+
+                            Text(memo.text)
+                                .font(.caption)
+                                .lineLimit(2)
+                                .multilineTextAlignment(.leading)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(14)
+        .frame(width: 260, alignment: .topLeading)
+        .glassBackgroundEffect()
+    }
+}
+
+private extension MemoItem {
+    var workspaceSafeColorIndex: Int {
+        guard MemoLabel.colors.indices.contains(colorIndex) else {
+            return 0
+        }
+
+        return colorIndex
     }
 }
 

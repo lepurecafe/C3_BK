@@ -4,11 +4,15 @@ import SwiftUI
 // 앱을 실행했을 때 사용자가 처음 만나는 조작 패널입니다.
 //
 // 이 View의 책임:
-// 1. ARKit 감지 상태를 보여줍니다.
-// 2. 박스 생성 버튼으로 ImmersiveSpace 안에 entity 박스를 띄웁니다.
-// 3. 메모 생성 버튼으로 MemoEditorSheet를 띄웁니다.
-// 4. SwiftData에 저장된 박스/메모를 @Query로 읽어 재열기 목록을 보여줍니다.
+// 1. 앱 시작과 함께 책상 인식용 ImmersiveSpace를 엽니다.
+// 2. 사용자가 박스 이름을 입력하면 ImmersiveSpace 안에 entity 박스를 띄웁니다.
+// 3. SwiftData에 저장된 박스/메모를 DEBUG 목록에서 확인할 수 있게 합니다.
 struct ControlPanelView: View {
+    private enum PanelMode {
+        case home
+        case namingBox
+    }
+
     // DesktopOrganizerApp에 등록된 WindowGroup을 새 창으로 여는 SwiftUI 환경 함수입니다.
     @Environment(\.openWindow) private var openWindow
     // ARKit 평면 감지를 시작할 ImmersiveSpace를 여는 환경 함수입니다.
@@ -19,7 +23,7 @@ struct ControlPanelView: View {
     // ImmersiveSpace 안에 직접 표시할 entity 박스 요청을 관리합니다.
     @State private var workspaceStore = WorkspaceEntityStore.shared
     // SwiftData 저장 작업을 수행하는 context입니다.
-    // createBox()에서 새 OrganizerBox를 insert/save합니다.
+    // createBox(named:)에서 새 OrganizerBox를 insert/save합니다.
     @Environment(\.modelContext) private var modelContext
 
     // SwiftData에 저장된 박스 목록입니다.
@@ -28,8 +32,8 @@ struct ControlPanelView: View {
     // SwiftData에 저장된 메모 목록입니다.
     @Query(sort: \MemoItem.createdAt) private var memos: [MemoItem]
 
-    // 메모 작성 sheet 표시 여부입니다.
-    @State private var showMemoEditor = false
+    @State private var panelMode: PanelMode = .home
+    @State private var draftBoxName = ""
     // body가 다시 계산되어도 ImmersiveSpace를 반복해서 열지 않도록 막는 플래그입니다.
     @State private var isSensingOpen = false
     @State private var showResetAlert = false
@@ -40,29 +44,14 @@ struct ControlPanelView: View {
         VStack(spacing: 16) {
             sensingStatusView
 
-            HStack(spacing: 12) {
-                // 박스 생성 흐름:
-                // 버튼 탭 -> createBox() -> SwiftData 저장 -> WorkspaceEntityStore에 entity 생성 요청
-                Button("박스 등장") {
-                    Task {
-                        await createBox()
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-
-                // 메모 생성 흐름:
-                // 버튼 탭 -> showMemoEditor true -> sheet 표시 -> MemoEditorSheet에서 Create 처리
-                Button("메모 작성") {
-                    controlStatusText = "메모 작성 열림"
-                    showMemoEditor = true
-                }
-                .buttonStyle(.bordered)
+            switch panelMode {
+            case .home:
+                homePanel
+            case .namingBox:
+                namingBoxPanel
             }
 
-            Text(controlStatusText)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-
+            #if DEBUG
             // 저장된 항목이 하나라도 있으면 재열기/박스별 메모 목록을 보여줍니다.
             // 앱을 다시 실행한 뒤 이전 박스/메모를 찾고, 메모가 어느 박스에 들어갔는지 확인하는 지점입니다.
             if !boxes.isEmpty || !memos.isEmpty {
@@ -72,7 +61,6 @@ struct ControlPanelView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            #if DEBUG
             Divider()
             Button("데이터 초기화", role: .destructive) {
                 controlStatusText = "초기화 확인 대기"
@@ -83,6 +71,9 @@ struct ControlPanelView: View {
             #endif
         }
         .padding(20)
+        .task {
+            _ = await openSensingIfNeeded()
+        }
         .alert("데이터 초기화", isPresented: $showResetAlert) {
             Button("취소", role: .cancel) {}
             Button("전부 삭제", role: .destructive) {
@@ -98,13 +89,10 @@ struct ControlPanelView: View {
         } message: {
             Text(storageErrorMessage ?? "알 수 없는 오류가 발생했습니다.")
         }
-        .sheet(isPresented: $showMemoEditor) {
-            MemoEditorSheet()
-        }
     }
 
     private var sensingStatusView: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             HStack(spacing: 8) {
                 Circle()
                     .fill(isSensingOpen ? .green : .gray)
@@ -118,12 +106,66 @@ struct ControlPanelView: View {
             }
 
             if !isSensingOpen {
-                Button("공간 인식 시작") {
+                Button("공간 인식 다시 요청") {
                     startSensing()
                 }
                 .buttonStyle(.bordered)
                 .font(.caption)
             }
+
+            Text(controlStatusText)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var homePanel: some View {
+        VStack(spacing: 18) {
+            Text("안녕하세요. 당신의 친구 직박구리입니다.")
+                .font(.headline)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+
+            Button("박스 만들기") {
+                draftBoxName = ""
+                controlStatusText = "박스 이름 입력"
+                panelMode = .namingBox
+            }
+            .buttonStyle(.borderedProminent)
+        }
+    }
+
+    private var namingBoxPanel: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("박스 이름")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            TextField("예: 회의 메모", text: $draftBoxName)
+                .textFieldStyle(.roundedBorder)
+                .submitLabel(.done)
+                .onSubmit {
+                    Task {
+                        await submitBoxName()
+                    }
+                }
+
+            HStack(spacing: 10) {
+                Button("취소") {
+                    draftBoxName = ""
+                    controlStatusText = "준비됨"
+                    panelMode = .home
+                }
+                .buttonStyle(.bordered)
+
+                Button("확인") {
+                    Task {
+                        await submitBoxName()
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
         }
     }
 
@@ -289,7 +331,14 @@ struct ControlPanelView: View {
     }
 
     @MainActor
-    private func createBox() async {
+    private func submitBoxName() async {
+        let trimmedName = draftBoxName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let resolvedName = trimmedName.isEmpty ? "Box \(boxes.count + 1)" : trimmedName
+        await createBox(named: resolvedName)
+    }
+
+    @MainActor
+    private func createBox(named name: String) async {
         controlStatusText = "박스 생성 중..."
 
         // ARKit이 책상 후보를 찾았으면 그 위치를, 아직 못 찾았으면 fallback 위치를 받습니다.
@@ -298,7 +347,7 @@ struct ControlPanelView: View {
         // 이 저장 덕분에 ControlPanel의 @Query 목록과 다음 앱 실행의 재열기 목록에 나타납니다.
         let position = workspacePosition(from: origin)
         let box = OrganizerBox(
-            name: "Box \(boxes.count + 1)",
+            name: name,
             posX: position.x,
             posY: position.y,
             posZ: position.z
@@ -328,6 +377,8 @@ struct ControlPanelView: View {
 
         let isSpaceReady = await openSensingIfNeeded()
         controlStatusText = isSpaceReady ? "박스 등장 요청 완료" : "박스 저장됨, 공간 열기 필요"
+        draftBoxName = ""
+        panelMode = .home
     }
 
     private func workspacePosition(from origin: (x: Float, y: Float, z: Float)) -> SIMD3<Float> {

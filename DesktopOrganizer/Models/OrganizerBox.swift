@@ -3,14 +3,13 @@ import SwiftData
 
 // SwiftData에 저장되는 박스 기록입니다.
 //
-// BoxPayload가 "창을 열기 위한 값"이라면,
-// OrganizerBox는 "앱을 껐다 켜도 남아야 하는 데이터"입니다.
-// ControlPanelView의 @Query가 이 모델을 읽어 재열기 목록을 만듭니다.
+// OrganizerBox는 앱을 껐다 켜도 남아야 하는 박스 데이터입니다.
+// ControlPanelView와 WorkspaceRealityView가 이 모델을 읽어 공간 속 entity를 복원합니다.
 @Model
 final class OrganizerBox {
     // @Attribute(.unique)는 같은 id가 중복 저장되지 않도록 하는 SwiftData 제약입니다.
     @Attribute(.unique) var id: UUID
-    // ControlPanel 목록과 BoxPayload에 표시할 이름입니다.
+    // ControlPanel 목록과 공간 속 attachment에 표시할 이름입니다.
     var name: String
     // @Query(sort:)에서 생성 순서대로 정렬할 때 사용합니다.
     var createdAt: Date

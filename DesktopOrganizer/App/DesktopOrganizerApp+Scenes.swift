@@ -16,7 +16,7 @@ extension DesktopOrganizerApp {
         }
         // ControlPanel은 내용 크기만큼 작게 유지해서 도구 패널처럼 보이게 합니다.
         .windowResizability(.contentSize)
-        .defaultSize(width: 380, height: 420)
+        .defaultSize(width: 360, height: 260)
         // SwiftData 저장소를 앱에 연결합니다.
         // OrganizerBox와 MemoItem을 @Query로 읽고 modelContext.insert로 저장할 수 있게 됩니다.
         .modelContainer(for: [OrganizerBox.self, MemoItem.self])
