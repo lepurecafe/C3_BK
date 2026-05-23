@@ -10,8 +10,7 @@ struct PlaneOverlayView: View {
     @Environment(PlaneDetectionService.self) private var planeService
 
     var body: some View {
-        // Phase A부터는 빈 RealityView 대신 WorkspaceRealityView를 둡니다.
-        // 이 View 안에서 volumetric window가 아닌 순수 RealityKit entity를 직접 표시합니다.
+        // 이 View 안에서 별도 window가 아닌 RealityKit entity를 직접 표시합니다.
         WorkspaceRealityView()
             .task {
                 // ImmersiveSpace가 열리면 ARKit 평면 감지가 시작됩니다.

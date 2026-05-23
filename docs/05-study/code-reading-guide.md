@@ -16,8 +16,8 @@ Desktop Organizer는 visionOS에서 조작 패널을 띄우고, 사용자가 만
 
 1. 앱 실행
 2. `ControlPanelView`가 열린다
-3. 사용자가 공간 인식, 박스 생성, 메모 생성을 누른다
-4. SwiftUI가 `WindowGroup` 또는 `ImmersiveSpace`를 찾아 창/공간을 연다
+3. 사용자가 공간 인식, 박스 생성, 박스 안 메모 생성을 누른다
+4. SwiftUI가 `WindowGroup` 또는 `ImmersiveSpace`를 찾아 조작 패널/공간을 연다
 5. SwiftData가 생성된 박스와 메모 기록을 저장한다
 
 ---
@@ -32,7 +32,7 @@ Desktop Organizer는 visionOS에서 조작 패널을 띄우고, 사용자가 만
 
 - `ControlPanelView`: 버튼과 목록이 있는 조작 패널
 - `WorkspaceRealityView`: 공간 속 3D 박스 entity를 관리하는 화면
-- `MemoLabelView`: 메모 라벨 모양을 그리는 화면
+- `BoxMemoAttachmentView`: 박스 위에 붙는 메모 관리 attachment
 
 ### `App`
 
@@ -51,12 +51,11 @@ struct DesktopOrganizerApp: App
 
 visionOS에서 하나의 창 또는 몰입 공간 단위다.
 
-이 앱에는 주로 3개의 Scene이 있다.
+이 앱에는 주로 2개의 Scene이 있다.
 
 | Scene | 역할 |
 |------|------|
 | `controlPanelScene` | 앱을 실행하면 처음 보이는 조작 패널 |
-| `memoWindowScene` | 개별 메모 라벨이 뜨는 plain window |
 | `sensingSpaceScene` | ARKit 공간 인식과 3D 박스 entity를 실행하는 mixed ImmersiveSpace |
 
 ### `@State`
@@ -66,13 +65,13 @@ View 또는 App이 직접 소유하는 상태다.
 예:
 
 ```swift
-@State private var showMemoEditor = false
+@State private var panelMode: PanelMode = .home
 ```
 
 뜻:
 
-- `false`면 메모 작성 sheet를 닫아 둔다.
-- `true`가 되면 sheet를 연다.
+- `.home`이면 기본 인사 화면을 보여준다.
+- `.namingBox`가 되면 박스 이름 입력 화면을 보여준다.
 - 값이 바뀌면 SwiftUI가 화면을 다시 그린다.
 
 ### `@Environment`
@@ -82,13 +81,13 @@ View 또는 App이 직접 소유하는 상태다.
 예:
 
 ```swift
-@Environment(\.openWindow) private var openWindow
+@Environment(\.openImmersiveSpace) private var openImmersiveSpace
 ```
 
 뜻:
 
-- `openWindow(...)`를 호출하면 앱에 등록된 다른 창을 열 수 있다.
-- `ControlPanelView`가 직접 새 창을 만드는 것이 아니라, SwiftUI 환경에 "이 창 열어줘"라고 요청한다.
+- `openImmersiveSpace(...)`를 호출하면 앱에 등록된 몰입 공간을 열 수 있다.
+- `ControlPanelView`가 직접 ARKit 화면을 만드는 것이 아니라, SwiftUI 환경에 "이 공간 열어줘"라고 요청한다.
 
 ### `@Query`
 
@@ -112,10 +111,10 @@ SwiftData 저장소에서 데이터를 자동으로 읽어오는 방법이다.
 예:
 
 ```swift
-MemoLabelView(memo: $memo)
+TextField("예: 회의 메모", text: $draftBoxName)
 ```
 
-`$memo`는 "값을 복사해서 주는 것"이 아니라 "이 값과 연결된 손잡이를 주는 것"에 가깝다.
+`$draftBoxName`은 "값을 복사해서 주는 것"이 아니라 "이 값과 연결된 손잡이를 주는 것"에 가깝다.
 
 ---
 
@@ -134,7 +133,6 @@ MemoLabelView(memo: $memo)
 
 - 앱이 어떤 Scene들을 등록하는지
 - 기본 창이 무엇인지
-- 메모 창이 어디에 등록되어 있는지
 - ARKit 공간 인식과 3D 박스 공간은 어떤 Scene에서 시작되는지
 
 핵심 질문:
@@ -151,15 +149,13 @@ MemoLabelView(memo: $memo)
 볼 것:
 
 - 버튼이 어떤 함수를 호출하는지
-- `createBox()`가 어떤 순서로 실행되는지
-- `showMemoEditor`가 어떻게 sheet를 여는지
+- `createBox(named:)`가 어떤 순서로 실행되는지
 - 저장된 박스/메모 목록이 어떻게 화면에 표시되는지
-- 메모를 박스 안으로 넣고 꺼낼 때 `MemoItem.containerBoxID`가 어떻게 바뀌는지
+- 박스 안 메모가 `MemoItem.containerBoxID`로 어떻게 연결되는지
 
 핵심 질문:
 
 - 박스 생성 버튼을 누르면 어떤 코드가 실행되는가?
-- 메모 생성 버튼을 누르면 왜 바로 메모 창이 열리지 않고 sheet가 먼저 뜨는가?
 - 박스 안 메모 목록은 어떤 기준으로 필터링되는가?
 
 ### 3단계: 데이터 모델
@@ -168,13 +164,14 @@ MemoLabelView(memo: $memo)
 
 - `DesktopOrganizer/Models/OrganizerBox.swift`
 - `DesktopOrganizer/Models/MemoItem.swift`
-- `DesktopOrganizer/Models/MemoLabel.swift`
+- `DesktopOrganizer/Models/MemoPalette.swift`
 
 볼 것:
 
 - `OrganizerBox`, `MemoItem`은 SwiftData 저장용 모델이다.
-- `MemoLabel`은 메모 창을 열 때 SwiftUI에 전달하는 값이다.
-- `MemoItem.containerBoxID`가 nil이면 박스 밖 메모, 값이 있으면 특정 박스 안 메모다.
+- `MemoPalette`는 메모 색상 배열과 안전한 색상 인덱스 처리를 담당한다.
+- `MemoItem.containerBoxID`는 메모가 어느 박스에서 만들어졌는지 연결한다.
+- `MemoItem.isSpatiallyPresented`가 true이면 공간에 꺼낸 메모 attachment로 복원된다.
 - `OrganizerBox.worldAnchorIdentifier`는 실제 ARKit WorldAnchor가 만들어졌을 때 채워진다.
 
 핵심 질문:
@@ -183,26 +180,25 @@ MemoLabelView(memo: $memo)
 - 메모가 어느 박스 안에 들어 있는지는 어디에 저장되는가?
 - Simulator에서 앵커 버튼을 눌렀을 때 왜 `worldAnchorIdentifier`가 비어 있을 수 있을까?
 
-### 4단계: 메모 작성 흐름
+### 4단계: 박스 안 메모와 공간 메모 흐름
 
 읽을 파일:
 
-- `DesktopOrganizer/Views/MemoEditorSheet.swift`
-- `DesktopOrganizer/Views/MemoLabelView.swift`
+- `DesktopOrganizer/Views/WorkspaceRealityView.swift`
 - `DesktopOrganizer/Views/ColorButton.swift`
 
 볼 것:
 
-- 사용자가 입력 중인 임시 상태는 `@State`에 있다.
-- `Create`를 누르면 `MemoItem`으로 저장한다.
-- 저장 성공 후 `MemoLabel`을 만들어 새 plain window를 연다.
-- 미리보기와 실제 메모 창이 같은 `MemoLabelView`를 재사용한다.
+- 박스 위 attachment 안에서 메모 내용을 입력하고 색상을 고른다.
+- 저장 버튼을 누르면 `MemoItem(containerBoxID: box.id)`로 저장한다.
+- 메모 카드를 클릭하거나 밖으로 드래그하면 공간 메모 attachment가 열린다.
+- 공간 메모는 이동, 닫기, 삭제, 앵커링을 할 수 있다.
 
 핵심 질문:
 
 - 입력 중인 텍스트는 언제 SwiftData에 저장되는가?
 - 색상은 왜 `Color`가 아니라 `colorIndex`로 저장되는가?
-- `MemoLabelView`는 왜 `@Binding`을 받을까?
+- 공간 메모를 닫는 것과 삭제하는 것은 어떻게 다를까?
 
 ### 5단계: 박스와 3D entity
 
@@ -283,35 +279,21 @@ MemoLabelView(memo: $memo)
 -> ImmersiveSpace 안에 박스 entity 배치
 ```
 
-### 3.3 메모 생성
+### 3.3 박스 안 메모 생성
 
 ```text
-사용자: "메모 생성" 버튼 탭
--> showMemoEditor = true
--> MemoEditorSheet 표시
--> 사용자가 텍스트/색상/모서리 입력
--> "Create" 버튼 탭
--> MemoEditorSheet.createMemo()
+사용자: 열린 박스 위 attachment에서 "메모 추가" 버튼 탭
+-> BoxMemoAttachmentView의 작성 UI 표시
+-> 사용자가 텍스트/색상 입력
+-> "저장" 버튼 탭
+-> WorkspaceRealityView.createMemo(in:text:colorIndex:)
 -> MemoItem 생성
 -> modelContext.insert(memo)
 -> try modelContext.save()
--> MemoLabel 생성
--> openWindow(value: label)
--> DesktopOrganizerApp+Scenes.memoWindowScene
--> MemoLabelView
+-> 박스 위 메모 목록 갱신
 ```
 
-### 3.4 메모를 박스에 넣기
-
-```text
-사용자: ControlPanel에서 특정 메모의 "넣기" 메뉴 선택
--> MemoItem.containerBoxID = 선택한 OrganizerBox.id
--> try modelContext.save()
--> ControlPanelView의 박스 안 메모 목록 갱신
--> 열린 박스의 BoxMemoAttachmentView 목록도 갱신
-```
-
-### 3.5 박스 안 메모 조회
+### 3.4 박스 안 메모 조회와 공간 메모 열기
 
 ```text
 사용자: 공간 속 박스 entity 탭
@@ -319,12 +301,12 @@ MemoLabelView(memo: $memo)
 -> WorkspaceEntityStore interaction mode 변경
 -> 박스 열림 애니메이션 재생
 -> BoxMemoAttachmentView가 박스 위 attachment로 표시
--> attachment 안의 메모 버튼 탭
--> openWindow(value: MemoLabel)
--> 개별 메모 plain window 표시
+-> attachment 안의 메모 카드 탭 또는 drag out
+-> WorkspaceRealityView.openSpatialMemo(...) 또는 drag out 완료 처리
+-> 공간 메모 attachment 표시
 ```
 
-### 3.6 데이터 초기화
+### 3.5 데이터 초기화
 
 ```text
 사용자: "데이터 초기화" 버튼 탭
@@ -339,30 +321,30 @@ MemoLabelView(memo: $memo)
 
 ## 4. 이 프로젝트에서 헷갈리기 쉬운 포인트
 
-### 4.1 저장 모델과 창 payload는 다르다
+### 4.1 저장 모델과 화면 상태는 다르다
 
 이 프로젝트에는 비슷해 보이는 타입들이 있다.
 
-| 저장용 | 창 전달용 | 이유 |
+| 저장용 | 화면/런타임 상태 | 이유 |
 |--------|-----------|------|
-| `OrganizerBox` | 없음 | 박스는 창으로 열지 않고 공간 entity로 직접 복원한다 |
-| `MemoItem` | `MemoLabel` | 저장 데이터와 메모 창 표시용 값을 분리하기 위해 |
+| `OrganizerBox` | RealityKit box entity | 박스를 앱 재실행 후 같은 위치에 복원하기 위해 |
+| `MemoItem` | spatial memo attachment | 메모 본문과 공간 배치 상태를 함께 복원하기 위해 |
+| `WorkspaceEntityStore` | 선택/열림/reset 상태 | SwiftData에 저장하지 않을 임시 interaction 상태를 공유하기 위해 |
 
-처음에는 번거로워 보이지만, 이 분리가 있으면 나중에 저장 구조를 바꿔도 창을 여는 방식은 덜 흔들린다.
+처음에는 번거로워 보이지만, 이 분리가 있으면 저장 데이터와 현재 화면 상태를 따로 생각할 수 있다.
 
-### 4.2 `openWindow`는 View를 직접 만드는 함수가 아니다
+### 4.2 공간 메모는 plain window가 아니다
 
-`openWindow`는 아래처럼 생각하면 된다.
+현재 메모는 별도 `WindowGroup`으로 열지 않는다.
 
 ```text
-"SwiftUI야, App에 등록된 WindowGroup 중에서 이 value와 맞는 창을 열어줘."
+MemoItem
+-> SpatialMemoPresentation
+-> RealityView Attachment
+-> 필요하면 WorldAnchor
 ```
 
-그래서 `openWindow(value: label)`이 동작하려면 App 쪽에 미리 이런 Scene이 있어야 한다.
-
-```swift
-WindowGroup(for: MemoLabel.self)
-```
+이 구조를 쓰는 이유는 메모도 박스처럼 이동, 앵커링, billboard 적용을 받아야 하기 때문이다.
 
 ### 4.3 `ImmersiveSpace`는 ARKit과 공간 entity를 실행하기 위한 무대다
 
@@ -378,7 +360,7 @@ WindowGroup(for: MemoLabel.self)
 
 책상이 감지되었다고 해서 책상이 자동으로 3D 오브젝트를 가려주는 것은 아니다.
 
-현재 앱은 감지 확인을 쉽게 하기 위해 감지된 책상 위치에 반투명 cyan plane을 그린다. 이 plane이 실제 책상 위에 맞게 보이면 plane detection이 동작하고 있다고 볼 수 있다.
+현재 앱은 감지 확인을 쉽게 하기 위해 감지된 책상 위치에 반투명 cyan plane을 그린다. 이 plane은 앱이 책상 후보로 확정한 수평면이다.
 
 ### 4.5 Preview는 실제 앱 실행과 다르다
 
@@ -387,7 +369,7 @@ WindowGroup(for: MemoLabel.self)
 주의할 점:
 
 - Preview에서는 전체 App의 Scene 등록이 항상 같이 뜨지 않는다.
-- `openWindow`, `openImmersiveSpace`, ARKit 흐름은 실제 앱 실행에서 확인해야 한다.
+- `openImmersiveSpace`와 ARKit 흐름은 실제 앱 실행에서 확인해야 한다.
 - Preview에서는 `.modelContainer(..., inMemory: true)`처럼 가짜 저장소를 넣어줘야 할 때가 있다.
 
 ---
@@ -403,10 +385,8 @@ WindowGroup(for: MemoLabel.self)
 - `PlaneDetectionService`: ARKit, plane detection, WorldAnchor 상태 관리
 - `WorkspaceRealityView`: 3D 박스 entity, attachment, interaction 관리
 - `WorkspaceEntityStore`: 공간 속 박스 UI 상태 관리
-- `MemoEditorSheet`: 메모 작성
-- `MemoLabelView`: 메모 표시
+- `MemoPalette`: 메모 색상 팔레트
 - `OrganizerBox`, `MemoItem`: 저장 데이터
-- `MemoLabel`: 메모 창에 전달하는 값
 
 ### 5.2 버튼 하나씩 따라가기
 
@@ -414,13 +394,13 @@ WindowGroup(for: MemoLabel.self)
 
 추천 순서:
 
-1. "메모 생성" 버튼
-2. "Create" 버튼
-3. 저장된 메모 목록 버튼
-4. "박스 생성" 버튼
-5. 공간 속 박스 탭
-6. 앵커 버튼
-7. "공간 인식 시작" 버튼
+1. "공간 인식 시작" 버튼
+2. "박스 만들기" 버튼
+3. 박스 이름 입력 후 "확인" 버튼
+4. 공간 속 박스 탭
+5. 박스 위 "메모 추가" 버튼
+6. 메모 카드 drag out
+7. 공간 메모 닫기/삭제/앵커 버튼
 
 ### 5.3 주석을 읽을 때 보는 기준
 
@@ -451,7 +431,7 @@ WindowGroup(for: MemoLabel.self)
    - `WindowGroup`
    - `.windowStyle(.plain)`
    - `ImmersiveSpace`
-   - `openWindow`
+   - `openImmersiveSpace`
    - `openImmersiveSpace`
    - `RealityView` attachment
 

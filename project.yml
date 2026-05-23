@@ -15,7 +15,7 @@ targets:
     type: application
     platform: visionOS
     sources:
-      - DesktopOrganizer
+      - path: DesktopOrganizer
     dependencies:
       - package: RealityKitContent
         product: RealityKitContent

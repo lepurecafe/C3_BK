@@ -7,40 +7,52 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		03D5D77A944E7F7CD5A0AEE4 /* WorkspaceRealityView+Memos.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A96FEDB90A96DFBFA5AF9D /* WorkspaceRealityView+Memos.swift */; };
 		08A59AE56BD116E01D48A614 /* WorkspaceRealityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4129B2F60BFBBFE7971C09CA /* WorkspaceRealityView.swift */; };
-		1B303537C7064571BDBE1894 /* MemoEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFC8073849C8731E3D39A06 /* MemoEditorSheet.swift */; };
 		20732BC52696915CA02F6C2E /* PlaneDetectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09A40CF17B1B5C1406306F5B /* PlaneDetectionService.swift */; };
 		3319B884998C79093F0F5063 /* DesktopOrganizerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BE59DE13DA16AABD4671C0A /* DesktopOrganizerApp.swift */; };
-		389277EBA4955BF17AB065E7 /* MemoLabelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3C0A1203B989609A372339 /* MemoLabelView.swift */; };
 		4844F1827F1491F3A238AAB8 /* OrganizerBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE68E338AE5ECB28AA6DC734 /* OrganizerBox.swift */; };
 		49326FB599DE53550C8108C7 /* ControlPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F8AAFBC8DC0CEB69212B2C /* ControlPanelView.swift */; };
-		4D185C6DEDAC2D79A13237B7 /* MemoLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63024AECA87A24528C6B14A2 /* MemoLabel.swift */; };
+		4DB28A800628DD9969897311 /* WorkspaceRealityView+Geometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59544202E5C2751062FD2660 /* WorkspaceRealityView+Geometry.swift */; };
 		5D47023557F05202F70B43A0 /* ColorButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEB0BA8021802E54C5B63701 /* ColorButton.swift */; };
-		5EFB0890F149057E545FE632 /* AppPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC2BA6403060F15FF148613F /* AppPreview.swift */; };
+		675292251C992CBA7E12A9F3 /* WorkspaceRealityState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AD0DB5737DF2DFF4E7019D9 /* WorkspaceRealityState.swift */; };
 		6887D305F7E4AC4B92239E2F /* MemoItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 391604CE21F36746DA33B6B4 /* MemoItem.swift */; };
 		6DC093EF89EF981F6E2D1BCD /* PlaneOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FAB40B190242F3669057DB8 /* PlaneOverlayView.swift */; };
+		729E00DB62188ABB86690F2D /* MemoPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDA32A49455E2D7A18CCEF10 /* MemoPalette.swift */; };
+		73B9F4AFCAA57547C352FB4C /* SpatialMemoAttachmentViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A1410BAE84BB19DE5E1FB4E /* SpatialMemoAttachmentViews.swift */; };
+		7454E7731E55F8EB7DBB8018 /* WorkspaceRealityView+Attachments.swift in Sources */ = {isa = PBXBuildFile; fileRef = D14079764118A5E79D7F6C49 /* WorkspaceRealityView+Attachments.swift */; };
 		894B9D1055751190922786F5 /* RealityKitContent in Frameworks */ = {isa = PBXBuildFile; productRef = 3813C2DD1A821824EE44FF98 /* RealityKitContent */; };
-		9C2AE510AA2A01CB196A9A96 /* DesktopOrganizerApp+Scenes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AF2CBBC79CE2E1F38FC26D5 /* DesktopOrganizerApp+Scenes.swift */; };
+		90FD0C2597E75B4589587481 /* BoxControlAttachmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D53BE410E23D698EF6BB714B /* BoxControlAttachmentView.swift */; };
+		B11C0633761DF3F3834BC1C5 /* BoxMemoAttachmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76F1FAD0850498EEB6B5120F /* BoxMemoAttachmentView.swift */; };
+		BDFBD9C55492C581B60B8E90 /* WorkspaceRealityView+Boxes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BAF91544BA54E662A9B7E /* WorkspaceRealityView+Boxes.swift */; };
 		C32CCCC8177F2BD15B3ADA7F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E99FF4774D6B335B8CE5954F /* Assets.xcassets */; };
+		C8ACE529785009DEE1E65333 /* WorkspaceRealityView+Anchors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78E4EF8951B076C88984121E /* WorkspaceRealityView+Anchors.swift */; };
+		D6482A9AD23EE9C560953B03 /* WorkspaceInteractionMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0127969FFE5C88B0AE81F42F /* WorkspaceInteractionMetrics.swift */; };
 		DADE826F05671A523922F71E /* WorkspaceEntityStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10E9CF59BC03BA507BDFEC57 /* WorkspaceEntityStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0127969FFE5C88B0AE81F42F /* WorkspaceInteractionMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceInteractionMetrics.swift; sourceTree = "<group>"; };
 		09A40CF17B1B5C1406306F5B /* PlaneDetectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaneDetectionService.swift; sourceTree = "<group>"; };
 		10E9CF59BC03BA507BDFEC57 /* WorkspaceEntityStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceEntityStore.swift; sourceTree = "<group>"; };
 		289ABD1AC6926E07F631EF59 /* DesktopOrganizer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DesktopOrganizer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		298BAF91544BA54E662A9B7E /* WorkspaceRealityView+Boxes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceRealityView+Boxes.swift"; sourceTree = "<group>"; };
 		391604CE21F36746DA33B6B4 /* MemoItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoItem.swift; sourceTree = "<group>"; };
 		4129B2F60BFBBFE7971C09CA /* WorkspaceRealityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceRealityView.swift; sourceTree = "<group>"; };
-		63024AECA87A24528C6B14A2 /* MemoLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoLabel.swift; sourceTree = "<group>"; };
-		6AF2CBBC79CE2E1F38FC26D5 /* DesktopOrganizerApp+Scenes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesktopOrganizerApp+Scenes.swift"; sourceTree = "<group>"; };
+		59544202E5C2751062FD2660 /* WorkspaceRealityView+Geometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceRealityView+Geometry.swift"; sourceTree = "<group>"; };
+		5AD0DB5737DF2DFF4E7019D9 /* WorkspaceRealityState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceRealityState.swift; sourceTree = "<group>"; };
 		74D6DB3D3B1CF5309F239FC5 /* RealityKitContent */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RealityKitContent; path = Packages/RealityKitContent; sourceTree = SOURCE_ROOT; };
+		76F1FAD0850498EEB6B5120F /* BoxMemoAttachmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoxMemoAttachmentView.swift; sourceTree = "<group>"; };
+		78E4EF8951B076C88984121E /* WorkspaceRealityView+Anchors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceRealityView+Anchors.swift"; sourceTree = "<group>"; };
+		9A1410BAE84BB19DE5E1FB4E /* SpatialMemoAttachmentViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpatialMemoAttachmentViews.swift; sourceTree = "<group>"; };
 		9BE59DE13DA16AABD4671C0A /* DesktopOrganizerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopOrganizerApp.swift; sourceTree = "<group>"; };
-		9F3C0A1203B989609A372339 /* MemoLabelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoLabelView.swift; sourceTree = "<group>"; };
 		9FAB40B190242F3669057DB8 /* PlaneOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaneOverlayView.swift; sourceTree = "<group>"; };
-		9FFC8073849C8731E3D39A06 /* MemoEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoEditorSheet.swift; sourceTree = "<group>"; };
+		A5A96FEDB90A96DFBFA5AF9D /* WorkspaceRealityView+Memos.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceRealityView+Memos.swift"; sourceTree = "<group>"; };
 		C5F8AAFBC8DC0CEB69212B2C /* ControlPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlPanelView.swift; sourceTree = "<group>"; };
-		CC2BA6403060F15FF148613F /* AppPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPreview.swift; sourceTree = "<group>"; };
 		CF43FA94827D542D7414BBA9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		D14079764118A5E79D7F6C49 /* WorkspaceRealityView+Attachments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceRealityView+Attachments.swift"; sourceTree = "<group>"; };
+		D53BE410E23D698EF6BB714B /* BoxControlAttachmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoxControlAttachmentView.swift; sourceTree = "<group>"; };
+		DDA32A49455E2D7A18CCEF10 /* MemoPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoPalette.swift; sourceTree = "<group>"; };
 		DEB0BA8021802E54C5B63701 /* ColorButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorButton.swift; sourceTree = "<group>"; };
 		E99FF4774D6B335B8CE5954F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		EE68E338AE5ECB28AA6DC734 /* OrganizerBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizerBox.swift; sourceTree = "<group>"; };
@@ -79,7 +91,7 @@
 			isa = PBXGroup;
 			children = (
 				391604CE21F36746DA33B6B4 /* MemoItem.swift */,
-				63024AECA87A24528C6B14A2 /* MemoLabel.swift */,
+				DDA32A49455E2D7A18CCEF10 /* MemoPalette.swift */,
 				EE68E338AE5ECB28AA6DC734 /* OrganizerBox.swift */,
 			);
 			path = Models;
@@ -117,12 +129,20 @@
 		A36A3F1DAF5A70BAC08651D8 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				D53BE410E23D698EF6BB714B /* BoxControlAttachmentView.swift */,
+				76F1FAD0850498EEB6B5120F /* BoxMemoAttachmentView.swift */,
 				DEB0BA8021802E54C5B63701 /* ColorButton.swift */,
 				C5F8AAFBC8DC0CEB69212B2C /* ControlPanelView.swift */,
-				9FFC8073849C8731E3D39A06 /* MemoEditorSheet.swift */,
-				9F3C0A1203B989609A372339 /* MemoLabelView.swift */,
 				9FAB40B190242F3669057DB8 /* PlaneOverlayView.swift */,
+				9A1410BAE84BB19DE5E1FB4E /* SpatialMemoAttachmentViews.swift */,
+				0127969FFE5C88B0AE81F42F /* WorkspaceInteractionMetrics.swift */,
+				5AD0DB5737DF2DFF4E7019D9 /* WorkspaceRealityState.swift */,
 				4129B2F60BFBBFE7971C09CA /* WorkspaceRealityView.swift */,
+				78E4EF8951B076C88984121E /* WorkspaceRealityView+Anchors.swift */,
+				D14079764118A5E79D7F6C49 /* WorkspaceRealityView+Attachments.swift */,
+				298BAF91544BA54E662A9B7E /* WorkspaceRealityView+Boxes.swift */,
+				59544202E5C2751062FD2660 /* WorkspaceRealityView+Geometry.swift */,
+				A5A96FEDB90A96DFBFA5AF9D /* WorkspaceRealityView+Memos.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -139,9 +159,7 @@
 		FC4C8E016F9D561C65781E31 /* App */ = {
 			isa = PBXGroup;
 			children = (
-				CC2BA6403060F15FF148613F /* AppPreview.swift */,
 				9BE59DE13DA16AABD4671C0A /* DesktopOrganizerApp.swift */,
-				6AF2CBBC79CE2E1F38FC26D5 /* DesktopOrganizerApp+Scenes.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -216,19 +234,25 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5EFB0890F149057E545FE632 /* AppPreview.swift in Sources */,
+				90FD0C2597E75B4589587481 /* BoxControlAttachmentView.swift in Sources */,
+				B11C0633761DF3F3834BC1C5 /* BoxMemoAttachmentView.swift in Sources */,
 				5D47023557F05202F70B43A0 /* ColorButton.swift in Sources */,
 				49326FB599DE53550C8108C7 /* ControlPanelView.swift in Sources */,
-				9C2AE510AA2A01CB196A9A96 /* DesktopOrganizerApp+Scenes.swift in Sources */,
 				3319B884998C79093F0F5063 /* DesktopOrganizerApp.swift in Sources */,
-				1B303537C7064571BDBE1894 /* MemoEditorSheet.swift in Sources */,
 				6887D305F7E4AC4B92239E2F /* MemoItem.swift in Sources */,
-				4D185C6DEDAC2D79A13237B7 /* MemoLabel.swift in Sources */,
-				389277EBA4955BF17AB065E7 /* MemoLabelView.swift in Sources */,
+				729E00DB62188ABB86690F2D /* MemoPalette.swift in Sources */,
 				4844F1827F1491F3A238AAB8 /* OrganizerBox.swift in Sources */,
 				20732BC52696915CA02F6C2E /* PlaneDetectionService.swift in Sources */,
 				6DC093EF89EF981F6E2D1BCD /* PlaneOverlayView.swift in Sources */,
+				73B9F4AFCAA57547C352FB4C /* SpatialMemoAttachmentViews.swift in Sources */,
 				DADE826F05671A523922F71E /* WorkspaceEntityStore.swift in Sources */,
+				D6482A9AD23EE9C560953B03 /* WorkspaceInteractionMetrics.swift in Sources */,
+				675292251C992CBA7E12A9F3 /* WorkspaceRealityState.swift in Sources */,
+				C8ACE529785009DEE1E65333 /* WorkspaceRealityView+Anchors.swift in Sources */,
+				7454E7731E55F8EB7DBB8018 /* WorkspaceRealityView+Attachments.swift in Sources */,
+				BDFBD9C55492C581B60B8E90 /* WorkspaceRealityView+Boxes.swift in Sources */,
+				4DB28A800628DD9969897311 /* WorkspaceRealityView+Geometry.swift in Sources */,
+				03D5D77A944E7F7CD5A0AEE4 /* WorkspaceRealityView+Memos.swift in Sources */,
 				08A59AE56BD116E01D48A614 /* WorkspaceRealityView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

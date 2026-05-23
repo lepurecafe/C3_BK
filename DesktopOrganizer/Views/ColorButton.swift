@@ -1,9 +1,9 @@
 import SwiftUI
 
-// MemoEditorSheet에서 색상을 고를 때 사용하는 작은 원형 버튼입니다.
+// 메모 색상을 고를 때 사용하는 작은 원형 버튼입니다.
 //
 // 이 버튼은 색상 선택 상태를 직접 소유하지 않습니다.
-// 부모인 MemoEditorSheet가 colorIndex를 가지고 있고, 버튼은 눌렸을 때 action으로 부모에게 알려줍니다.
+// 부모 View가 colorIndex를 가지고 있고, 버튼은 눌렸을 때 action으로 부모에게 알려줍니다.
 struct ColorButton: View {
     // 원 안에 표시할 색입니다.
     let color: Color

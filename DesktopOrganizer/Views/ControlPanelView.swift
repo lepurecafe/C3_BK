@@ -4,17 +4,15 @@ import SwiftUI
 // 앱을 실행했을 때 사용자가 처음 만나는 조작 패널입니다.
 //
 // 이 View의 책임:
-// 1. 앱 시작과 함께 책상 인식용 ImmersiveSpace를 엽니다.
+// 1. 앱 시작 후 사용자 입력을 방해하지 않는 시점에 책상 인식용 ImmersiveSpace를 엽니다.
 // 2. 사용자가 박스 이름을 입력하면 ImmersiveSpace 안에 entity 박스를 띄웁니다.
-// 3. SwiftData에 저장된 박스/메모를 DEBUG 목록에서 확인할 수 있게 합니다.
+// 3. DEBUG 빌드에서는 저장된 박스/메모 개수를 확인하고 데이터를 초기화할 수 있게 합니다.
 struct ControlPanelView: View {
     private enum PanelMode {
         case home
         case namingBox
     }
 
-    // DesktopOrganizerApp에 등록된 WindowGroup을 새 창으로 여는 SwiftUI 환경 함수입니다.
-    @Environment(\.openWindow) private var openWindow
     // ARKit 평면 감지를 시작할 ImmersiveSpace를 여는 환경 함수입니다.
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
     // DesktopOrganizerApp에서 environment로 전달한 공유 ARKit 서비스입니다.
@@ -27,7 +25,7 @@ struct ControlPanelView: View {
     @Environment(\.modelContext) private var modelContext
 
     // SwiftData에 저장된 박스 목록입니다.
-    // 새 박스를 저장하면 이 배열이 자동으로 갱신되어 reopenList가 다시 그려집니다.
+    // 새 박스를 저장하면 이 배열이 자동으로 갱신되어 DEBUG 요약과 workspace 복원에 반영됩니다.
     @Query(sort: \OrganizerBox.createdAt) private var boxes: [OrganizerBox]
     // SwiftData에 저장된 메모 목록입니다.
     @Query(sort: \MemoItem.createdAt) private var memos: [MemoItem]
@@ -39,6 +37,7 @@ struct ControlPanelView: View {
     @State private var showResetAlert = false
     @State private var storageErrorMessage: String?
     @State private var controlStatusText = "준비됨"
+    @State private var isOpeningSensing = false
 
     var body: some View {
         VStack(spacing: 16) {
@@ -52,13 +51,10 @@ struct ControlPanelView: View {
             }
 
             #if DEBUG
-            // 저장된 항목이 하나라도 있으면 재열기/박스별 메모 목록을 보여줍니다.
-            // 앱을 다시 실행한 뒤 이전 박스/메모를 찾고, 메모가 어느 박스에 들어갔는지 확인하는 지점입니다.
+            // 실기기 테스트 중 저장 상태를 빠르게 확인하기 위한 DEBUG 전용 요약입니다.
             if !boxes.isEmpty || !memos.isEmpty {
                 Divider()
                 storedItemsSummary
-                reopenList
-                    .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             Divider()
@@ -72,7 +68,7 @@ struct ControlPanelView: View {
         }
         .padding(20)
         .task {
-            _ = await openSensingIfNeeded()
+            await openSensingAfterInitialInputWindow()
         }
         .alert("데이터 초기화", isPresented: $showResetAlert) {
             Button("취소", role: .cancel) {}
@@ -105,13 +101,11 @@ struct ControlPanelView: View {
                     .foregroundStyle(.secondary)
             }
 
-            if !isSensingOpen {
-                Button("공간 인식 다시 요청") {
-                    startSensing()
-                }
-                .buttonStyle(.bordered)
-                .font(.caption)
+            Button(isSensingOpen ? "책상 다시 인식" : "공간 인식 시작") {
+                startSensing()
             }
+            .buttonStyle(.bordered)
+            .font(.caption)
 
             Text(controlStatusText)
                 .font(.caption2)
@@ -185,8 +179,29 @@ struct ControlPanelView: View {
 
     private func startSensing() {
         Task {
-            _ = await openSensingIfNeeded()
+            if isSensingOpen {
+                planeService.requestTableRescan()
+                controlStatusText = "책상 다시 인식 요청"
+            } else if isOpeningSensing {
+                controlStatusText = "공간 여는 중..."
+            } else {
+                _ = await openSensingIfNeeded()
+            }
         }
+    }
+
+    @MainActor
+    private func openSensingAfterInitialInputWindow() async {
+        // 앱 시작 직후 ImmersiveSpace/ARKit 초기화가 첫 TextField 입력과 겹치면 실기기에서
+        // 이름 입력 반응이 늦어질 수 있어, 초기 화면이 안정된 뒤에만 자동으로 공간 인식을 시작합니다.
+        try? await Task.sleep(for: .seconds(1.2))
+
+        guard panelMode == .home else {
+            controlStatusText = "이름 입력 후 공간 인식"
+            return
+        }
+
+        _ = await openSensingIfNeeded()
     }
 
     @MainActor
@@ -198,7 +213,16 @@ struct ControlPanelView: View {
             return true
         }
 
+        guard !isOpeningSensing else {
+            controlStatusText = "공간 여는 중..."
+            return false
+        }
+
+        isOpeningSensing = true
         controlStatusText = "공간 여는 중..."
+        defer {
+            isOpeningSensing = false
+        }
 
         // openImmersiveSpace는 즉시 성공/실패를 돌려주는 비동기 작업입니다.
         // 실패하면 사용자가 다시 누를 수 있도록 isSensingOpen을 false로 유지합니다.
@@ -224,110 +248,11 @@ struct ControlPanelView: View {
         }
     }
 
-    private var reopenList: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if !boxes.isEmpty {
-                Text("박스")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                ForEach(boxes) { box in
-                    VStack(alignment: .leading, spacing: 4) {
-                        // 저장된 OrganizerBox를 다시 entity workspace 쪽으로 요청합니다.
-                        // 박스는 더 이상 volumetric window가 아니라 ImmersiveSpace 안의 entity로 복원됩니다.
-                        Button("📦 \(box.name) · 메모 \(memos(in: box).count)") {
-                            Task {
-                                await showBoxInWorkspace(box)
-                            }
-                        }
-                        .font(.caption)
-
-                        ForEach(memos(in: box)) { memo in
-                            HStack(spacing: 8) {
-                                Button("└ \(memo.text.prefix(18))") {
-                                    openMemoWindow(memo)
-                                }
-                                .font(.caption2)
-
-                                Button("꺼내기") {
-                                    removeMemoFromBox(memo)
-                                }
-                                .font(.caption2)
-                            }
-                            .padding(.leading, 10)
-                        }
-                    }
-                }
-            }
-
-            if !unboxedMemos.isEmpty {
-                Text("박스 밖 메모")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                ForEach(unboxedMemos) { memo in
-                    HStack(spacing: 8) {
-                        // 저장된 MemoItem을 다시 MemoLabel 값으로 바꿔 plain 메모 창을 엽니다.
-                        Button("📝 \(memo.text.prefix(20))") {
-                            openMemoWindow(memo)
-                        }
-                        .font(.caption)
-
-                        if !boxes.isEmpty {
-                            Menu("넣기") {
-                                ForEach(boxes) { box in
-                                    Button(box.name) {
-                                        moveMemo(memo, to: box)
-                                    }
-                                }
-                            }
-                            .font(.caption2)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     private var storedItemsSummary: some View {
         Text("저장 항목 · 박스 \(boxes.count) · 메모 \(memos.count)")
             .font(.caption2)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var unboxedMemos: [MemoItem] {
-        memos.filter { memo in
-            guard let containerBoxID = memo.containerBoxID else {
-                return true
-            }
-
-            // 박스가 삭제되었거나 이전 개발 버전에서 잘못된 ID가 저장된 메모는
-            // 목록에서 사라지지 않도록 "박스 밖 메모"로 다시 보여줍니다.
-            return !boxes.contains { $0.id == containerBoxID }
-        }
-    }
-
-    private func memos(in box: OrganizerBox) -> [MemoItem] {
-        memos.filter { $0.containerBoxID == box.id }
-    }
-
-    @MainActor
-    private func showBoxInWorkspace(_ box: OrganizerBox) async {
-        // 시뮬레이터에서 이전 실행의 ImmersiveSpace 상태가 남으면 openImmersiveSpace가 늦게 끝나거나
-        // 실패할 수 있습니다. 그래도 사용자의 버튼 입력은 먼저 workspace 요청으로 기록해 둡니다.
-        workspaceStore.addBox(
-            id: box.id,
-            name: box.name,
-            position: SIMD3<Float>(box.posX, box.posY, box.posZ)
-        )
-
-        if box.isAnchored {
-            workspaceStore.setBoxAnchored(true, for: box.id)
-        }
-
-        let isSpaceReady = await openSensingIfNeeded()
-        controlStatusText = isSpaceReady ? "저장된 박스 표시 요청 완료" : "공간 열기 필요"
     }
 
     @MainActor
@@ -363,15 +288,12 @@ struct ControlPanelView: View {
             return
         }
 
-        // Phase A-2부터는 새 박스를 volumetric window로 열지 않고,
-        // ImmersiveSpace 안의 WorkspaceRealityView가 직접 entity를 만들도록 요청합니다.
-        //
+        // 새 박스는 별도 window가 아니라 ImmersiveSpace 안의 WorkspaceRealityView가 직접 entity로 만듭니다.
         // 이 요청은 openImmersiveSpace보다 먼저 넣습니다. 시뮬레이터를 종료하지 않은 채 재빌드하면
         // 이전 ImmersiveSpace 상태 때문에 공간 열기 응답이 불안정할 수 있는데,
         // entity 요청을 먼저 저장해 두면 공간이 늦게 열려도 WorkspaceRealityView가 다시 읽을 수 있습니다.
         workspaceStore.addBox(
             id: box.id,
-            name: box.name,
             position: position
         )
 
@@ -385,43 +307,11 @@ struct ControlPanelView: View {
         let offsetX = Float(workspaceStore.boxRequests.count) * 0.3
 
         if planeService.detectedTablePlane == nil {
-            // 아직 평면이 잡히지 않은 상태에서는 Phase A-1에서 눈으로 확인된 위치를 fallback으로 씁니다.
+            // 아직 평면이 잡히지 않은 상태에서는 사용자 눈앞의 기본 위치를 fallback으로 씁니다.
             return SIMD3<Float>(offsetX, 1.0, -1.0)
         }
 
         return SIMD3<Float>(origin.x + offsetX, origin.y, origin.z)
-    }
-
-    private func openMemoWindow(_ memo: MemoItem) {
-        openWindow(
-            value: MemoLabel(
-                id: memo.id,
-                text: memo.text,
-                colorIndex: memo.colorIndex,
-                cornerRadius: memo.cornerRadius
-            )
-        )
-    }
-
-    private func moveMemo(_ memo: MemoItem, to box: OrganizerBox) {
-        memo.containerBoxID = box.id
-        saveMemoContainerChange(statusText: "\(box.name)에 메모 넣음")
-    }
-
-    private func removeMemoFromBox(_ memo: MemoItem) {
-        memo.containerBoxID = nil
-        saveMemoContainerChange(statusText: "메모를 박스 밖으로 꺼냄")
-    }
-
-    private func saveMemoContainerChange(statusText: String) {
-        do {
-            try modelContext.save()
-            controlStatusText = statusText
-        } catch {
-            modelContext.rollback()
-            storageErrorMessage = error.localizedDescription
-            controlStatusText = "메모 이동 실패"
-        }
     }
 
     private func resetAllData() {

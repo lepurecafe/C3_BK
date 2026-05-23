@@ -24,16 +24,23 @@ final class PlaneDetectionService {
     // horizontal alignment만 요청합니다.
     // 책상, 바닥, 선반처럼 수평인 표면이 모두 들어올 수 있고, 아래 width 필터로 작은 평면을 걸러냅니다.
     private var planeDetection = PlaneDetectionProvider(alignments: [.horizontal])
-    // 박스 entity를 실제 공간 위치에 고정하기 위한 world tracking provider입니다.
+    // 박스와 공간 메모 entity를 실제 공간 위치에 고정하기 위한 world tracking provider입니다.
     // PlaneDetectionService가 ARKitSession을 이미 소유하므로 같은 session 안에서 같이 실행합니다.
     private var worldTracking = WorldTrackingProvider()
-    private var worldAnchorsByBoxID: [UUID: WorldAnchor] = [:]
+    private var worldAnchorsByObjectID: [UUID: WorldAnchor] = [:]
     private var worldAnchorTransformsByID: [UUID: simd_float4x4] = [:]
     private var worldAnchorUpdateTask: Task<Void, Never>?
+    private var pendingWorldAnchorRevisionTask: Task<Void, Never>?
+    private var isDetectionRunning = false
+    private var lockedTablePlaneID: UUID?
 
     // PlaneOverlayView의 .task에서 호출됩니다.
     // 호출 후에는 anchorUpdates 비동기 시퀀스를 계속 기다리므로, 감지 결과가 들어올 때마다 상태가 갱신됩니다.
     func startDetection() async {
+        guard !isDetectionRunning else {
+            return
+        }
+
         // Simulator나 일부 기기에서는 plane detection을 지원하지 않을 수 있습니다.
         // 이 경우 앱이 crash하지 않고 ControlPanel에 상태를 보여주도록 빠져나갑니다.
         guard PlaneDetectionProvider.isSupported else {
@@ -42,6 +49,8 @@ final class PlaneDetectionService {
         }
 
         do {
+            isDetectionRunning = true
+
             // 여기서 실제 ARKit 평면 감지가 시작됩니다.
             if WorldTrackingProvider.isSupported {
                 try await arkitSession.run([planeDetection, worldTracking])
@@ -54,51 +63,55 @@ final class PlaneDetectionService {
             for await update in planeDetection.anchorUpdates {
                 switch update.event {
                 case .added, .updated:
-                    // MVP 기준의 단순한 책상 후보 판정입니다.
-                    // 폭이 0.3m보다 큰 수평면이면 책상으로 쓸 수 있다고 보고 저장합니다.
-                    if update.anchor.geometry.extent.width > 0.3 {
-                        detectedTablePlane = update.anchor
-                        tablePlaneDebugRevision += 1
-                        statusText = "책상 감지됨 ✓ \(formattedPlaneSize(update.anchor))"
-                    }
+                    handlePlaneCandidate(update.anchor)
                 case .removed:
                     // 지금 쓰고 있던 평면이 사라지면 fallback 상태로 돌아갑니다.
-                    if detectedTablePlane?.id == update.anchor.id {
+                    if lockedTablePlaneID == update.anchor.id {
+                        lockedTablePlaneID = nil
                         detectedTablePlane = nil
                         tablePlaneDebugRevision += 1
-                        statusText = "책상 인식 중..."
+                        statusText = "책상 후보 사라짐, 다시 인식 중..."
                     }
+
                 }
             }
         } catch {
+            isDetectionRunning = false
             statusText = "인식 실패: \(error.localizedDescription)"
         }
     }
 
-    func addWorldAnchor(for boxID: UUID, transform: simd_float4x4) async throws -> UUID {
+    func requestTableRescan() {
+        lockedTablePlaneID = nil
+        detectedTablePlane = nil
+        tablePlaneDebugRevision += 1
+        statusText = "책상 다시 인식 중..."
+    }
+
+    func addWorldAnchor(forObjectID objectID: UUID, transform: simd_float4x4) async throws -> UUID {
         guard WorldTrackingProvider.isSupported else {
             throw WorldAnchorError.unsupported
         }
 
-        if let existingAnchor = worldAnchorsByBoxID[boxID] {
+        if let existingAnchor = worldAnchorsByObjectID[objectID] {
             try? await worldTracking.removeAnchor(existingAnchor)
         }
 
         let anchor = WorldAnchor(originFromAnchorTransform: transform)
         try await worldTracking.addAnchor(anchor)
-        worldAnchorsByBoxID[boxID] = anchor
+        worldAnchorsByObjectID[objectID] = anchor
         worldAnchorTransformsByID[anchor.id] = anchor.originFromAnchorTransform
         worldAnchorRevision += 1
         return anchor.id
     }
 
-    func removeWorldAnchor(for boxID: UUID) async throws {
-        guard let anchor = worldAnchorsByBoxID[boxID] else {
+    func removeWorldAnchor(forObjectID objectID: UUID) async throws {
+        guard let anchor = worldAnchorsByObjectID[objectID] else {
             return
         }
 
         try await worldTracking.removeAnchor(anchor)
-        worldAnchorsByBoxID[boxID] = nil
+        worldAnchorsByObjectID[objectID] = nil
         worldAnchorTransformsByID[anchor.id] = nil
         worldAnchorRevision += 1
     }
@@ -123,13 +136,60 @@ final class PlaneDetectionService {
                 switch update.event {
                 case .added, .updated:
                     worldAnchorTransformsByID[update.anchor.id] = update.anchor.originFromAnchorTransform
-                    worldAnchorRevision += 1
+                    scheduleWorldAnchorRevisionUpdate()
                 case .removed:
                     worldAnchorTransformsByID[update.anchor.id] = nil
-                    worldAnchorRevision += 1
+                    scheduleWorldAnchorRevisionUpdate()
                 }
             }
         }
+    }
+
+    private func scheduleWorldAnchorRevisionUpdate() {
+        guard pendingWorldAnchorRevisionTask == nil else {
+            return
+        }
+
+        pendingWorldAnchorRevisionTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(80))
+            worldAnchorRevision += 1
+            pendingWorldAnchorRevisionTask = nil
+        }
+    }
+
+    private func handlePlaneCandidate(_ plane: PlaneAnchor) {
+        selectTablePlaneIfNeeded(plane)
+
+        if lockedTablePlaneID == nil {
+            statusText = "책상 후보 확인 중... \(formattedPlaneSize(plane))"
+        }
+    }
+
+    private func selectTablePlaneIfNeeded(_ plane: PlaneAnchor) {
+        guard lockedTablePlaneID == nil,
+              isUsableTableCandidate(plane)
+        else {
+            return
+        }
+
+        lockedTablePlaneID = plane.id
+        detectedTablePlane = plane
+        tablePlaneDebugRevision += 1
+        statusText = "책상 고정됨 ✓ \(formattedPlaneSize(plane))"
+    }
+
+    private func isUsableTableCandidate(_ plane: PlaneAnchor) -> Bool {
+        let width = plane.geometry.extent.width
+        let depth = plane.geometry.extent.height
+        let longEdge = max(width, depth)
+        let shortEdge = min(width, depth)
+        let area = width * depth
+
+        // ARKit은 책상을 처음부터 완성된 사각형으로 주지 않고, 얇은 조각부터 키워 나갈 수 있습니다.
+        // 그래서 양쪽 모두 0.3m 이상을 요구하지 않고, 긴 변과 짧은 변 기준을 나눠 둡니다.
+        // 너무 큰 면은 바닥일 가능성이 높아 제외합니다.
+        // 지금 단계에서는 "책상으로 보이는 수평면"을 안정적으로 한 번 잡는 것이 목표입니다.
+        return longEdge > 0.2 && shortEdge > 0.08 && area <= 8.0
     }
 
     // 박스 생성 시 사용할 위치입니다.
@@ -141,11 +201,12 @@ final class PlaneDetectionService {
         }
 
         // PlaneAnchor의 transform에서 translation 성분만 꺼냅니다.
-        // y를 0.05m 낮추는 것은 모델이 표면에 너무 떠 보이지 않게 조정하기 위한 MVP 값입니다.
+        // y는 감지된 평면 높이를 그대로 사용합니다.
+        // 박스 모델의 바닥 높이 보정은 WorkspaceRealityView가 visualBounds를 보고 처리합니다.
         // columns.3은 4x4 transform 행렬에서 위치(x, y, z)가 들어 있는 열입니다.
         // 처음에는 "감지된 평면의 중심 좌표를 꺼낸다" 정도로 이해하면 충분합니다.
         let col = plane.originFromAnchorTransform.columns.3
-        return (col.x, col.y - 0.05, col.z)
+        return (col.x, col.y, col.z)
     }
 
     private func formattedPlaneSize(_ plane: PlaneAnchor) -> String {

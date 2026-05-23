@@ -13,8 +13,6 @@ final class OrganizerBox {
     var name: String
     // @Query(sort:)에서 생성 순서대로 정렬할 때 사용합니다.
     var createdAt: Date
-    // MVP에서는 아직 적극적으로 쓰지 않지만, 이후 박스 열림/닫힘 상태로 확장할 자리입니다.
-    var isOpen: Bool = false
     // 사용자가 박스를 공간 안에서 옮긴 뒤 다시 열었을 때 복원할 위치입니다.
     // 실제 WorldAnchor를 붙이기 전까지는 이 좌표가 anchor 후보 위치 역할을 합니다.
     var posX: Float = 0
@@ -31,7 +29,6 @@ final class OrganizerBox {
         id: UUID = UUID(),
         name: String,
         createdAt: Date = .now,
-        isOpen: Bool = false,
         posX: Float = 0,
         posY: Float = 1.0,
         posZ: Float = -1.0,
@@ -41,7 +38,6 @@ final class OrganizerBox {
         self.id = id
         self.name = name
         self.createdAt = createdAt
-        self.isOpen = isOpen
         self.posX = posX
         self.posY = posY
         self.posZ = posZ
