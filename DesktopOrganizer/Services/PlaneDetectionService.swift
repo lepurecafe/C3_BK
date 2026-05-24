@@ -6,6 +6,10 @@ import RealityKit
 // 이 서비스는 UI View가 아니라 상태와 ARKit 세션을 관리하는 객체입니다.
 // DesktopOrganizerApp에서 하나만 만들고 environment로 공유하므로,
 // PlaneOverlayView가 감지를 시작하면 ControlPanelView도 같은 statusText와 detectedTablePlane을 읽습니다.
+//
+// 교재 연결:
+// - 2장: 버튼으로 ImmersiveSpace 열기
+// - 14장: 실제 공간에 고정하기
 @Observable
 @MainActor
 final class PlaneDetectionService {
@@ -117,6 +121,8 @@ final class PlaneDetectionService {
         planeDetection = PlaneDetectionProvider(alignments: [.horizontal])
         worldTracking = WorldTrackingProvider()
         worldAnchorsByObjectID.removeAll()
+        worldAnchorTransformsByID.removeAll()
+        worldAnchorRevision += 1
 
         statusText = "공간이 닫힘"
     }
@@ -187,6 +193,9 @@ final class PlaneDetectionService {
             return
         }
 
+        // 앱을 다시 열면 SwiftData에는 anchor id가 남아 있지만,
+        // PlaneDetectionService의 메모리 cache는 새로 시작됩니다.
+        // allAnchors를 한 번 훑어서 "anchor id -> transform" lookup table을 다시 채웁니다.
         for anchor in anchors {
             worldAnchorTransformsByID[anchor.id] = anchor.originFromAnchorTransform
         }
@@ -202,6 +211,8 @@ final class PlaneDetectionService {
             return
         }
 
+        // WorldTrackingProvider는 anchor가 추가/갱신/삭제될 때마다 비동기 update를 보냅니다.
+        // 이 task는 앱이 열린 동안 계속 기다리면서 transform cache를 최신 상태로 유지합니다.
         worldAnchorUpdateTask = Task { @MainActor in
             for await update in worldTracking.anchorUpdates {
                 switch update.event {
@@ -221,6 +232,8 @@ final class PlaneDetectionService {
             return
         }
 
+        // anchor update가 짧은 시간에 여러 번 들어올 수 있어 80ms 안의 변경을 하나로 묶습니다.
+        // 덕분에 RealityView가 필요 이상으로 자주 refresh되지 않습니다.
         pendingWorldAnchorRevisionTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(80))
             worldAnchorRevision += 1
@@ -233,6 +246,7 @@ final class PlaneDetectionService {
             return
         }
 
+        // plane anchor도 계속 흔들리며 갱신되므로 디버그 plane redraw를 약간 늦춰 묶습니다.
         pendingTablePlaneDebugRevisionTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(80))
             tablePlaneDebugRevision += 1
@@ -269,6 +283,8 @@ final class PlaneDetectionService {
             return
         }
 
+        // 첫 usable plane을 잡으면 그 뒤에는 계속 같은 plane id를 추적합니다.
+        // 이렇게 해야 ARKit이 다른 바닥/벽 후보를 보내도 박스 기준 평면이 갑자기 바뀌지 않습니다.
         lockedTablePlaneID = plane.id
         detectedTablePlane = plane
         scheduleTablePlaneDebugRevisionUpdate()

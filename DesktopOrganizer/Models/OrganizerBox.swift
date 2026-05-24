@@ -5,6 +5,10 @@ import SwiftData
 //
 // OrganizerBox는 앱을 껐다 켜도 남아야 하는 박스 데이터입니다.
 // ControlPanelView와 WorkspaceRealityView가 이 모델을 읽어 공간 속 entity를 복원합니다.
+//
+// 교재 연결:
+// - 13장: 공간 오브젝트 위치 저장하기
+// - 14장: 실제 공간에 고정하기
 @Model
 final class OrganizerBox {
     // @Attribute(.unique)는 같은 id가 중복 저장되지 않도록 하는 SwiftData 제약입니다.

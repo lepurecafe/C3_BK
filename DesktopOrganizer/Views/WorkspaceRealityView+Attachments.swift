@@ -1,6 +1,13 @@
 import RealityKit
 import SwiftUI
 
+// RealityView Attachment로 등록한 SwiftUI View들을 실제 RealityKit scene graph에 붙입니다.
+//
+// 교재 연결:
+// - 4장: entity에 SwiftUI 버튼 붙이기
+// - 8장: entity 위에 목록 UI 붙이기
+// - 10장: 드래그앤드롭으로 메모를 공간에 열기
+// - 11장: SwiftUI 카드 UI를 공간 오브젝트처럼 다루기
 extension WorkspaceRealityView {
     func updateDraggingMemoPreview(attachments: RealityViewAttachments) {
         guard let draggingMemoPreview,
@@ -16,6 +23,7 @@ extension WorkspaceRealityView {
             boxRoot.addChild(preview)
         }
 
+        // 교재 10장/11장: preview도 attachment entity이므로 위치와 billboard를 RealityKit 쪽에서 제어합니다.
         configureMemoBillboard(preview)
         preview.position = spatialMemoPosition(for: draggingMemoPreview.translation)
     }
@@ -33,12 +41,15 @@ extension WorkspaceRealityView {
                 continue
             }
 
+            // 교재 11장: SwiftUI 카드 UI를 attachment entity로 꺼내 rootEntity에 붙이면
+            // 박스와 독립적으로 이동/고정/삭제할 수 있는 공간 오브젝트가 됩니다.
             if memoEntity.parent !== rootEntity {
                 memoEntity.removeFromParent()
                 memoEntity.name = spatialMemoAttachmentID(for: presentation.id)
                 rootEntity.addChild(memoEntity)
             }
 
+            // Billboard/InputTarget/HoverEffect는 SwiftUI 카드가 공간에서 읽히고 조작되게 하는 RealityKit 설정입니다.
             configureOpenedMemoEntity(memoEntity)
             memoEntity.position = presentation.position
         }
@@ -64,6 +75,7 @@ extension WorkspaceRealityView {
                 continue
             }
 
+            // 교재 8장: 메모 목록은 박스의 자식으로 붙여 박스를 드래그할 때 같이 움직이게 합니다.
             if memoList.parent !== boxRoot {
                 memoList.removeFromParent()
                 boxRoot.addChild(memoList)
@@ -83,6 +95,7 @@ extension WorkspaceRealityView {
             return
         }
 
+        // 교재 4장: 선택된 박스가 바뀌면 같은 controls attachment를 새 boxRoot 아래로 옮깁니다.
         if controls.parent !== selectedBoxRoot {
             controls.removeFromParent()
             selectedBoxRoot.addChild(controls)

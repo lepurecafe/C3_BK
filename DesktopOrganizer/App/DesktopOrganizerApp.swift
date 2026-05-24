@@ -10,6 +10,11 @@ import SwiftUI
 // 3. ImmersiveSpace 안의 PlaneOverlayView가 ARKit 평면 감지를 시작하고 WorkspaceRealityView가 entity 박스를 표시합니다.
 // 4. 박스와 메모는 WorkspaceRealityView 안의 entity/attachment로 표시됩니다.
 // 5. SwiftData modelContainer가 생성된 박스와 메모를 저장해 다음 실행 때 목록으로 복원합니다.
+//
+// 교재 연결:
+// - 1장: 전체 구조 패턴
+// - 2장: 버튼으로 ImmersiveSpace 열기
+// - 13장: 공간 오브젝트 위치 저장하기
 @main
 struct DesktopOrganizerApp: App {
     // ARKit 감지 상태를 앱 전체에서 공유하는 서비스입니다.

@@ -5,6 +5,10 @@ import SwiftUI
 //
 // 화면에 무언가를 그리는 목적보다는,
 // mixed ImmersiveSpace 안에서 RealityView를 유지하고 ARKit session을 시작하는 진입점 역할을 합니다.
+//
+// 교재 연결:
+// - 1장: 전체 구조 패턴
+// - 2장: 버튼으로 ImmersiveSpace 열기
 struct PlaneOverlayView: View {
     // DesktopOrganizerApp에서 ControlPanelView와 같은 PlaneDetectionService 인스턴스를 전달받습니다.
     @Environment(PlaneDetectionService.self) private var planeService

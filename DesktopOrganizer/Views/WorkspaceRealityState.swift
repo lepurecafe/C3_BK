@@ -4,6 +4,12 @@ import RealityKit
 // RealityKit entity와 animation controller는 SwiftUI 화면 상태가 아니라 런타임 객체입니다.
 // RealityView update 중 @State를 직접 바꾸면 "Modifying state during view update" 경고가 나므로,
 // SwiftUI가 관찰하지 않는 reference container에 모아 둡니다.
+//
+// 교재 연결:
+// - 3장: 공간에 3D entity 배치하기
+// - 7장: 내장 3D animation 재생하기
+// - 10장: 드래그앤드롭으로 메모를 공간에 열기
+// - 11장: SwiftUI 카드 UI를 공간 오브젝트처럼 다루기
 @MainActor
 final class WorkspaceRealitySceneState {
     var rootEntity: Entity?

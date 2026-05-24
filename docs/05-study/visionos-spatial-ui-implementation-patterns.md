@@ -100,6 +100,116 @@ ImmersiveSpace(id: "sensing") {
 - `SwiftData`: 물건과 메모의 기록장
 - `PlaneDetectionService`: 책상 위치를 찾는 감지 담당자
 
+### 저장 데이터와 실행 중 상태는 다르다
+
+이 앱을 읽을 때 가장 헷갈리기 쉬운 부분은 `SwiftData`와 `WorkspaceEntityStore`의 차이다.
+
+둘 다 "박스 정보"를 다루지만 역할이 다르다.
+
+```text
+SwiftData
+앱을 껐다 켜도 남아야 하는 기록장
+예: OrganizerBox, MemoItem
+
+WorkspaceEntityStore
+지금 열린 ImmersiveSpace 안에서만 필요한 작업 지시서
+예: 새 박스를 공간에 띄워 달라는 요청, 현재 선택된 박스, animation 상태
+```
+
+예를 들어 사용자가 새 박스를 만들면 먼저 `OrganizerBox`가 SwiftData에 저장된다.
+
+```swift
+let box = OrganizerBox(
+    name: name,
+    posX: position.x,
+    posY: position.y,
+    posZ: position.z
+)
+modelContext.insert(box)
+try modelContext.save()
+```
+
+그 다음 현재 열린 공간에 실제 entity를 띄우기 위해 `WorkspaceEntityStore`에 요청을 넣는다.
+
+```swift
+workspaceStore.addBox(
+    id: box.id,
+    position: position
+)
+```
+
+쉽게 말하면:
+
+```text
+SwiftData에 저장한다
+-> 앱을 다시 켜도 박스 기록이 남는다
+
+WorkspaceEntityStore에 요청한다
+-> 지금 열린 공간에 박스 entity를 그린다
+```
+
+이 둘을 나누면 좋은 점이 있다.
+
+- 저장 실패와 화면 표시 실패를 따로 다룰 수 있다.
+- 앱 재실행 후에는 SwiftData를 읽어 다시 그릴 수 있다.
+- 지금 화면에서만 필요한 선택 상태, animation 상태를 저장 데이터에 섞지 않아도 된다.
+
+### `.task(id:)`와 revision 패턴
+
+`RealityView` 안에서는 SwiftUI 화면처럼 모든 것을 자동으로 다시 그리기 어렵다. 이미 만들어 둔 RealityKit entity를 언제 새로 만들고, 언제 지울지 직접 알려줘야 한다.
+
+그래서 이 앱은 `revision`이라는 숫자를 사용한다.
+
+```swift
+private(set) var revision = 0
+```
+
+새 박스 요청이 들어오면 revision을 올린다.
+
+```swift
+revision += 1
+```
+
+그리고 `WorkspaceRealityView`에서는 이 값을 `.task(id:)`에 연결한다.
+
+```swift
+.task(id: renderRevision) {
+    await renderKnownBoxes()
+}
+```
+
+`renderRevision`은 저장된 박스 id와 `workspaceStore.revision`을 합친 문자열이다.
+
+```swift
+private var renderRevision: String {
+    let persistedIDs = persistedBoxes
+        .map(\.id.uuidString)
+        .joined(separator: "|")
+
+    return "\(workspaceStore.revision):\(persistedIDs)"
+}
+```
+
+이렇게 하면 둘 중 하나가 바뀔 때 렌더링을 다시 확인한다.
+
+```text
+새 박스 요청이 들어옴
+-> workspaceStore.revision 증가
+-> renderRevision 변경
+-> .task(id:) 재실행
+-> renderKnownBoxes() 호출
+```
+
+공간 메모도 비슷하다. 메모가 열렸는지, 위치가 바뀌었는지, anchor id가 생겼는지를 문자열로 펼쳐서 `spatialMemoPersistenceRevision`을 만든다. 값이 바뀌면 공간 메모 attachment를 다시 복원한다.
+
+대안도 있다.
+
+- 직접 함수를 호출해서 바로 entity를 만들 수 있다.
+- 모든 상태를 `@State` 배열에 넣고 SwiftUI 변경만 믿을 수 있다.
+- 별도 Observable view model을 만들어 더 엄격하게 상태를 관리할 수 있다.
+
+하지만 이 앱처럼 SwiftData, RealityKit entity, attachment가 함께 움직이는 구조에서는 `revision` 숫자로 "다시 확인해"라고 알려주는 방식이 단순하고 추적하기 쉽다.
+
 ### 직접 만들어보는 최소 예제
 
 ```swift
@@ -135,6 +245,7 @@ struct MySpatialApp: App {
 - [Apple Developer - ImmersiveSpace](https://developer.apple.com/documentation/swiftui/immersivespace)
 - [Apple Developer - RealityView](https://developer.apple.com/documentation/realitykit/realityview)
 - [Apple Developer - SwiftData](https://developer.apple.com/documentation/swiftdata)
+- [Apple Developer - task(id:priority:_:)](https://developer.apple.com/documentation/swiftui/view/task%28id:priority:_%3A%29)
 
 ---
 
@@ -1262,6 +1373,74 @@ private func spatialMemoPosition(for translation: CGSize) -> SIMD3<Float> {
 
 여기서 `memoDragMetersPerPoint`는 화면 drag point를 공간 meter로 바꾸는 비율이다.
 
+조금 더 쉽게 풀면, SwiftUI의 `DragGesture`는 "손이 화면에서 몇 point 움직였는지"를 알려준다. 하지만 RealityKit 공간에서는 박스와 메모가 meter에 가까운 3D 좌표로 배치된다.
+
+그래서 바로 이 값을 쓸 수 없다.
+
+```text
+SwiftUI drag translation
+예: width 120pt, height 40pt
+
+RealityKit position
+예: x 0.12m, y 0.30m, z -0.8m
+```
+
+이 앱은 아주 단순한 변환 비율을 둔다.
+
+```swift
+let memoDragMetersPerPoint: Float = 0.001
+```
+
+그래서 100pt를 끌면 공간에서는 약 0.1m 움직인 것으로 계산한다.
+
+```text
+100pt * 0.001 = 0.1
+```
+
+y축은 부호가 반대다.
+
+SwiftUI에서는 아래로 끌면 `translation.height`가 양수로 커진다. 하지만 3D 공간에서는 보통 위쪽이 +y다. 그래서 아래로 끌 때 공간 메모가 아래로 내려가게 하려면 `height` 앞에 `-`를 붙인다.
+
+```swift
+-Float(translation.height) * memoDragMetersPerPoint
+```
+
+이 패턴을 기억하면 된다.
+
+```text
+화면 drag 값
+-> 작게 줄인다
+-> x는 그대로 사용한다
+-> y는 부호를 반대로 한다
+-> 필요하면 기준 위치를 더한다
+```
+
+이미 공간에 열린 메모를 다시 열지 않는 처리도 중요하다.
+
+박스 목록에는 같은 메모가 계속 보인다. 사용자는 "이 메모가 박스 안에 있구나"를 확인할 수 있다. 하지만 이미 공간에 열린 메모를 다시 탭하거나 드래그해서 또 열면 같은 `MemoItem`을 두 번 펼치는 문제가 생긴다.
+
+그래서 이 앱은 이미 열린 메모를 목록에 남기되, 상태만 표시하고 다시 열기는 막는다.
+
+```swift
+if isSelectingMemos {
+    toggleSelection(for: memo.id)
+} else if memo.isSpatiallyPresented {
+    return
+} else {
+    onMemoSelected(memo)
+}
+```
+
+카드에는 "공간에 열림" 상태를 보여준다.
+
+```swift
+if isOpenedInSpace {
+    return "공간에 열림"
+}
+```
+
+이 방식은 사용자가 현재 상태를 이해하기 쉽고, 앱 내부 데이터도 안전하다.
+
 ### 직접 만들어보는 최소 예제
 
 ```swift
@@ -1398,6 +1577,95 @@ WorkspaceRoot
 
 이렇게 하면 공간 메모가 박스와 독립적으로 움직일 수 있다.
 
+### attachment entity란?
+
+`attachment entity`는 SwiftUI View를 RealityKit 공간 안에 배치할 수 있게 꺼낸 entity다.
+
+흐름은 아래와 같다.
+
+```text
+SwiftUI View
+-> Attachment(id:)
+-> attachments.entity(for:)
+-> RealityKit Entity
+-> rootEntity.addChild(...) 또는 boxRoot.addChild(...)
+```
+
+예를 들어 `SpatialMemoOpenedAttachment`는 처음에는 SwiftUI View다.
+
+```swift
+SpatialMemoOpenedAttachment(
+    title: presentation.title,
+    text: presentation.text,
+    colorIndex: presentation.colorIndex,
+    isAnchored: presentation.isAnchored,
+    onClose: {
+        deleteSpatialMemoPresentation(id: presentation.id)
+    },
+    onDelete: {
+        deleteMemoFromSpatialPresentation(presentation)
+    },
+    onToggleAnchor: {
+        Task {
+            await toggleSpatialMemoAnchor(id: presentation.id)
+        }
+    },
+    onDragChanged: { translation in
+        moveSpatialMemoPresentation(id: presentation.id, translation: translation)
+    },
+    onDragEnded: {
+        finishMovingSpatialMemoPresentation(id: presentation.id)
+    }
+)
+```
+
+이 SwiftUI View를 `Attachment`로 등록한다.
+
+```swift
+Attachment(id: spatialMemoAttachmentID(for: presentation.id)) {
+    SpatialMemoOpenedAttachment(...)
+}
+```
+
+그 다음 `RealityView`의 update 쪽에서 `attachments.entity(for:)`로 꺼낸다.
+
+```swift
+guard let memoEntity = attachments.entity(
+    for: spatialMemoAttachmentID(for: presentation.id)
+) else {
+    continue
+}
+```
+
+여기서부터 `memoEntity`는 RealityKit scene graph에 붙일 수 있는 entity처럼 다룰 수 있다.
+
+```swift
+rootEntity.addChild(memoEntity)
+memoEntity.position = presentation.position
+```
+
+이 앱에서 attachment entity로 쓰는 SwiftUI View는 아래와 같다.
+
+- `BoxControlAttachmentView`: 박스 아래 삭제/pin 버튼
+- `BoxMemoAttachmentView`: 박스 위 메모 목록
+- `SpatialMemoPreviewAttachment`: 드래그 중 미리보기 카드
+- `SpatialMemoOpenedAttachment`: 공간에 열린 메모 카드
+
+이 방식을 쓰면 UI는 SwiftUI로 빠르게 만들고, 공간 배치는 RealityKit entity처럼 처리할 수 있다. 그래서 위치 설정, 부모-자식 관계, `BillboardComponent`, `InputTargetComponent`, `HoverEffectComponent`, WorldAnchor 연결 같은 공간 기능을 함께 사용할 수 있다.
+
+정리하면 아래와 같다.
+
+```text
+메모 UI 자체는 SwiftUI
+공간 배치 대상은 attachment entity
+```
+
+### BillboardComponent란?
+
+`BillboardComponent`는 entity가 사용자를 향하도록 방향을 보정해주는 RealityKit 컴포넌트다.
+
+공간 메모는 SwiftUI 카드처럼 납작한 UI다. 사용자가 옆으로 이동하면 카드가 비스듬히 보이거나 읽기 어려워질 수 있다. 메모는 감상용 3D 물체가 아니라 읽어야 하는 카드이므로, 가능한 한 사용자를 향하는 편이 좋다.
+
 또, 메모가 사용자를 향하도록 `BillboardComponent`를 붙인다.
 
 ```swift
@@ -1407,6 +1675,34 @@ private func configureMemoBillboard(_ entity: Entity) {
     entity.components.set(billboard)
 }
 ```
+
+`blendFactor`는 billboard 효과를 얼마나 강하게 줄지 정하는 값이다.
+
+```text
+0.0  -> 원래 entity 방향을 거의 유지
+1.0  -> 완전히 사용자를 향하게 회전
+0.75 -> 대부분 사용자를 향하지만 약간 자연스럽게 유지
+```
+
+이 앱에서는 공간 메모 entity를 설정할 때 billboard, input target, hover effect를 함께 붙인다.
+
+```swift
+func configureOpenedMemoEntity(_ entity: Entity) {
+    configureMemoBillboard(entity)
+    entity.components.set(InputTargetComponent())
+    entity.components.set(HoverEffectComponent())
+}
+```
+
+세 컴포넌트의 역할은 아래와 같다.
+
+```text
+BillboardComponent     -> 사용자를 향하게 함
+InputTargetComponent   -> 입력/gesture 대상이 되게 함
+HoverEffectComponent   -> 바라보거나 hover할 때 반응하게 함
+```
+
+`BillboardComponent`는 메모, 이름표, 툴팁, 말풍선, 상태 라벨처럼 항상 읽기 쉬워야 하는 2D성 UI에 잘 맞는다. 반대로 조각상이나 가구처럼 방향 자체가 의미 있는 3D 물체에는 조심해서 써야 한다.
 
 ### 직접 만들어보는 최소 예제
 
@@ -1488,7 +1784,9 @@ VStack(spacing: 8) {
 }
 ```
 
-닫기는 presentation만 제거하고 저장 모델은 남긴다.
+이 앱에서 닫기는 "잠깐 숨김"이 아니라 "공간에서 접어서 박스 안 메모로 되돌리기"다.
+
+그래서 닫기를 누르면 presentation을 제거하고, 공간 고정 상태도 같이 해제한다. 하지만 MemoItem 자체는 남긴다.
 
 ```swift
 spatialMemoPresentations.removeAll { $0.id == id }
@@ -1532,7 +1830,7 @@ saveSpatialMemoState(statusText: "공간 메모 위치 저장됨")
 
 닫기와 삭제는 다르다.
 
-- 닫기: 공간에서만 치운다. 메모 데이터는 박스 안에 남는다.
+- 닫기: 공간에서 접는다. 메모 데이터는 박스 안에 남고, pin은 해제된다.
 - 삭제: 메모 데이터 자체를 지운다.
 
 이 차이를 저장 모델의 상태값으로 표현한다.
@@ -1764,6 +2062,57 @@ box.worldAnchorIdentifier = anchorID.uuidString
 try modelContext.save()
 ```
 
+여기서 중요한 점은 순서다.
+
+```text
+1. ARKit에 WorldAnchor를 만든다
+2. SwiftData에 anchor id를 저장한다
+```
+
+이 순서는 자연스럽다. 실제 anchor를 만들어야 id를 알 수 있기 때문이다.
+
+하지만 이 순서에는 위험도 있다. 1번은 성공했는데 2번 저장이 실패하면 어떻게 될까?
+
+```text
+ARKit에는 anchor가 생김
+SwiftData에는 anchor id가 저장되지 않음
+앱은 나중에 그 anchor를 찾거나 지우기 어려움
+```
+
+이런 상태를 고아 anchor라고 생각하면 된다. 그래서 이 앱은 저장 실패 시 방금 만든 anchor를 다시 제거한다.
+
+```swift
+let previousAnchorIdentifier = box.worldAnchorIdentifier
+let anchorID = try await planeService.addWorldAnchor(
+    forObjectID: boxID,
+    replacingAnchorIdentifier: box.worldAnchorIdentifier,
+    transform: transform
+)
+box.worldAnchorIdentifier = anchorID.uuidString
+
+do {
+    try modelContext.save()
+} catch {
+    try? await planeService.removeWorldAnchor(
+        forObjectID: boxID,
+        anchorIdentifier: anchorID.uuidString
+    )
+    box.worldAnchorIdentifier = previousAnchorIdentifier
+    modelContext.rollback()
+    throw error
+}
+```
+
+쉽게 말하면:
+
+```text
+고정핀 꽂기 성공
+-> 기록장에 번호 쓰기 실패
+-> 방금 꽂은 고정핀을 다시 뽑기
+```
+
+이런 코드를 보상 처리라고 부를 수 있다. ARKit 같은 외부 시스템 상태와 SwiftData 같은 앱 저장 상태를 함께 바꿀 때는, 중간에 실패했을 때 되돌리는 처리가 중요하다.
+
 WorldAnchor 생성은 service가 담당한다.
 
 ```swift
@@ -1781,6 +2130,37 @@ private func workspacePosition(for box: OrganizerBox) -> SIMD3<Float> {
     worldAnchorPosition(for: box) ?? SIMD3<Float>(box.posX, box.posY, box.posZ)
 }
 ```
+
+현재 앱은 WorldAnchor의 transform 전체를 복원하지 않고, 위치 성분만 꺼내 쓴다.
+
+```swift
+let position = transform.columns.3
+return SIMD3<Float>(position.x, position.y, position.z)
+```
+
+왜 이렇게 했을까?
+
+현재 앱에는 사용자가 박스나 메모를 회전시키는 기능이 없다. 그리고 공간 메모는 `BillboardComponent`가 붙어서 사용자를 향하도록 방향을 보정한다. 그래서 지금 단계에서는 "어느 방향을 보고 있었는가"보다 "어디에 있었는가"가 더 중요하다.
+
+정리하면 현재 정책은 이렇다.
+
+```text
+WorldAnchor 전체 pose 저장
+-> 복원할 때는 position 중심으로 사용
+-> 회전 복원은 추후 회전 기능이 생기면 별도 검토
+```
+
+만약 회전이 중요한 앱이라면 다르게 해야 한다. 예를 들어 그림 액자, 3D 조형물, 방향이 중요한 도구라면 `transform.columns.3`만 꺼내지 말고 matrix 전체를 entity transform에 적용하는 방식을 검토해야 한다.
+
+공간을 닫을 때는 WorldAnchor transform cache도 비운다.
+
+```swift
+worldAnchorsByObjectID.removeAll()
+worldAnchorTransformsByID.removeAll()
+worldAnchorRevision += 1
+```
+
+이 cache는 "방금 알고 있던 anchor 위치 메모장"에 가깝다. 공간을 닫고 provider를 새로 만들면, 예전 메모장을 계속 들고 있는 것보다 다음 시작 때 다시 읽는 편이 안전하다.
 
 파일:
 

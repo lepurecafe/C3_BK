@@ -3,6 +3,13 @@ import RealityKitContent
 import SwiftUI
 import UIKit
 
+// 박스 entity의 생성, 크기 보정, 입력 처리, 이동, 열림/닫힘 animation을 담당합니다.
+//
+// 교재 연결:
+// - 3장: 공간에 3D entity 배치하기
+// - 5장: entity 탭과 선택 상태 처리하기
+// - 6장: entity 드래그 이동 처리하기
+// - 7장: 내장 3D animation 재생하기
 extension WorkspaceRealityView {
     @MainActor
     func renderKnownBoxes() async {
@@ -75,6 +82,9 @@ extension WorkspaceRealityView {
             return
         }
 
+        // 교재 3장: boxRoot는 박스의 공간상 대표 좌표이고,
+        // travelCase는 그 안에 들어가는 실제 USDZ 모델입니다.
+        // 이렇게 나누면 모델 scale/pivot/animation 보정이 박스의 실제 공간 좌표를 건드리지 않습니다.
         let boxRoot = Entity()
         boxRoot.name = boxEntityName(for: id)
         boxRoot.position = position
@@ -185,6 +195,7 @@ extension WorkspaceRealityView {
         sceneState.animationTasks[id]?.cancel()
         sceneState.animationControllers[id]?.stop()
 
+        // 교재 7장: USDZ 안에 들어 있는 첫 animation을 0초부터 끝까지 재생해 박스를 엽니다.
         let controller = entity.playAnimation(animation, transitionDuration: 0, startsPaused: true)
         let duration = max(controller.duration, 0.1)
         controller.speed = 1
@@ -210,6 +221,7 @@ extension WorkspaceRealityView {
         sceneState.animationTasks[id]?.cancel()
         sceneState.animationControllers[id]?.stop()
 
+        // 교재 7장: 별도 close animation이 없으므로 같은 animation의 time을 뒤에서 앞으로 직접 움직입니다.
         let controller = entity.playAnimation(animation, transitionDuration: 0, startsPaused: true)
         let duration = max(controller.duration, 0.1)
         controller.pause()
@@ -238,6 +250,7 @@ extension WorkspaceRealityView {
     }
 
     func configureInputTargets(in entity: Entity) {
+        // 교재 5장: targeted gesture가 entity를 찾으려면 입력 대상과 collision shape가 필요합니다.
         entity.components.set(InputTargetComponent())
         entity.components.set(HoverEffectComponent())
 
@@ -260,6 +273,7 @@ extension WorkspaceRealityView {
             return
         }
 
+        // 교재 6장: DragGesture translation은 누적 이동량이므로 시작 위치를 저장해 두고 더합니다.
         let startPosition = sceneState.dragStartPositions[boxID] ?? boxRoot.position
         sceneState.dragStartPositions[boxID] = startPosition
 

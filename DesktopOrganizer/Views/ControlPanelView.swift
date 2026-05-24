@@ -7,6 +7,11 @@ import SwiftUI
 // 1. 사용자가 직접 책상 인식용 ImmersiveSpace를 시작하거나 종료할 수 있게 합니다.
 // 2. 사용자가 박스 이름을 입력하면 ImmersiveSpace 안에 entity 박스를 띄웁니다.
 // 3. DEBUG 빌드에서는 저장된 박스/메모 개수를 확인하고 데이터를 초기화할 수 있게 합니다.
+//
+// 교재 연결:
+// - 2장: 버튼으로 ImmersiveSpace 열기
+// - 3장: 공간에 3D entity 배치하기
+// - 13장: 공간 오브젝트 위치 저장하기
 struct ControlPanelView: View {
     private enum PanelMode {
         case home
@@ -194,6 +199,7 @@ struct ControlPanelView: View {
     }
 
     private func toggleSensingSpace() {
+        // 교재 2장: WindowGroup 안의 버튼이 SwiftUI 환경 함수로 ImmersiveSpace를 여는 패턴입니다.
         Task {
             if isSensingOpen {
                 await closeSensingSpace()
@@ -308,7 +314,7 @@ struct ControlPanelView: View {
             return
         }
 
-        // 새 박스는 별도 window가 아니라 ImmersiveSpace 안의 WorkspaceRealityView가 직접 entity로 만듭니다.
+        // 교재 3장: 새 박스는 별도 window가 아니라 ImmersiveSpace 안의 WorkspaceRealityView가 직접 entity로 만듭니다.
         // 이 요청은 openImmersiveSpace보다 먼저 넣습니다. 시뮬레이터를 종료하지 않은 채 재빌드하면
         // 이전 ImmersiveSpace 상태 때문에 공간 열기 응답이 불안정할 수 있는데,
         // entity 요청을 먼저 저장해 두면 공간이 늦게 열려도 WorkspaceRealityView가 다시 읽을 수 있습니다.
@@ -324,6 +330,9 @@ struct ControlPanelView: View {
     }
 
     private func workspacePosition(from origin: (x: Float, y: Float, z: Float)) -> SIMD3<Float> {
+        // 새 박스를 만들 때 같은 좌표에 모두 쌓이지 않도록 x 방향으로 조금씩 밀어 둡니다.
+        // workspaceStore.boxRequests는 현재 실행 중 "공간에 띄워 달라"고 요청한 박스 목록입니다.
+        // 더 정교하게 만들려면 SwiftData boxes의 실제 저장 좌표를 보고 빈 자리를 찾는 방식으로 바꿀 수 있습니다.
         let offsetX = Float(workspaceStore.boxRequests.count) * 0.3
 
         if planeService.detectedTablePlane == nil {

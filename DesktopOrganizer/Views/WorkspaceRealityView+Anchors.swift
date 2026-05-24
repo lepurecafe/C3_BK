@@ -1,9 +1,15 @@
 import RealityKit
 import SwiftUI
 
+// 박스와 공간 메모를 WorldAnchor에 연결하거나, 지원되지 않는 환경에서 임시 고정으로 대체합니다.
+//
+// 교재 연결:
+// - 13장: 공간 오브젝트 위치 저장하기
+// - 14장: 실제 공간에 고정하기
 extension WorkspaceRealityView {
     @MainActor
     func applyKnownWorldAnchorTransforms() {
+        // 교재 14장: WorldAnchor transform cache가 있으면 저장 좌표보다 실제 공간 anchor 위치를 우선 적용합니다.
         for box in persistedBoxes {
             guard let boxRoot = sceneState.boxRoots[box.id],
                   let anchorPosition = worldAnchorPosition(for: box)
@@ -30,6 +36,8 @@ extension WorkspaceRealityView {
             return nil
         }
 
+        // 현재 앱은 박스 회전 조작을 제공하지 않으므로 WorldAnchor의 위치 성분만 복원합니다.
+        // 나중에 회전까지 저장/복원하려면 boxRoot.transform.matrix 전체 적용을 별도 검토해야 합니다.
         let position = transform.columns.3
         return SIMD3<Float>(position.x, position.y, position.z)
     }
@@ -39,6 +47,8 @@ extension WorkspaceRealityView {
             return nil
         }
 
+        // 공간 메모는 BillboardComponent가 사용자를 향하게 만들기 때문에,
+        // anchor 복원에서는 방향보다 위치를 우선 사용합니다.
         let position = transform.columns.3
         return SIMD3<Float>(position.x, position.y, position.z)
     }
@@ -76,14 +86,29 @@ extension WorkspaceRealityView {
             return
         }
 
+        // 교재 14장: 현재 boxRoot의 world transform을 WorldAnchor의 기준 transform으로 저장합니다.
         let transform = boxRoot.transformMatrix(relativeTo: nil)
+        let previousAnchorIdentifier = box.worldAnchorIdentifier
         let anchorID = try await planeService.addWorldAnchor(
             forObjectID: boxID,
             replacingAnchorIdentifier: box.worldAnchorIdentifier,
             transform: transform
         )
         box.worldAnchorIdentifier = anchorID.uuidString
-        try modelContext.save()
+
+        do {
+            try modelContext.save()
+        } catch {
+            // ARKit에는 이미 새 WorldAnchor가 생긴 상태입니다.
+            // SwiftData 저장이 실패하면 앱이 그 anchor id를 잃어버리므로, 방금 만든 anchor를 즉시 제거합니다.
+            try? await planeService.removeWorldAnchor(
+                forObjectID: boxID,
+                anchorIdentifier: anchorID.uuidString
+            )
+            box.worldAnchorIdentifier = previousAnchorIdentifier
+            modelContext.rollback()
+            throw error
+        }
     }
 
     @MainActor
@@ -198,7 +223,11 @@ extension WorkspaceRealityView {
             return
         }
 
+        // 교재 14장: 공간 메모는 SwiftUI attachment entity지만 위치는 presentation.position으로 관리하므로,
+        // 그 좌표를 4x4 transform으로 만들어 WorldAnchor에 넘깁니다.
         let transform = transformMatrix(for: presentation.position)
+        let previousAnchorIdentifier = memo.spatialWorldAnchorIdentifier
+        let previousPosition = SIMD3<Float>(memo.spatialPosX, memo.spatialPosY, memo.spatialPosZ)
         let anchorID = try await planeService.addWorldAnchor(
             forObjectID: presentation.id,
             replacingAnchorIdentifier: memo.spatialWorldAnchorIdentifier,
@@ -208,7 +237,23 @@ extension WorkspaceRealityView {
         memo.spatialPosX = presentation.position.x
         memo.spatialPosY = presentation.position.y
         memo.spatialPosZ = presentation.position.z
-        try modelContext.save()
+
+        do {
+            try modelContext.save()
+        } catch {
+            // 박스와 같은 보상 처리입니다.
+            // 저장 실패 시 새 anchor를 제거하고, 메모의 anchor id와 좌표를 저장 전 값으로 되돌립니다.
+            try? await planeService.removeWorldAnchor(
+                forObjectID: presentation.id,
+                anchorIdentifier: anchorID.uuidString
+            )
+            memo.spatialWorldAnchorIdentifier = previousAnchorIdentifier
+            memo.spatialPosX = previousPosition.x
+            memo.spatialPosY = previousPosition.y
+            memo.spatialPosZ = previousPosition.z
+            modelContext.rollback()
+            throw error
+        }
     }
 
     @MainActor
