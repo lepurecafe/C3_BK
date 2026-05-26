@@ -1,6 +1,6 @@
 # visionOS 공간 UI 구현 패턴 학습 노트
 
-Last updated: 2026-05-23
+Last updated: 2026-05-24
 Audience: visionOS 공간 UI 구현을 처음 학습하는 팀원
 Goal: Desktop Organizer를 그대로 복제하는 것이 아니라, 이 앱에 들어간 구현 패턴을 다른 앱에 응용할 수 있게 이해하기
 
@@ -593,7 +593,8 @@ private func updateSelectedBoxControls(attachments: RealityViewAttachments) {
 
 파일:
 
-- `DesktopOrganizer/Views/WorkspaceAttachmentViews.swift`
+- `DesktopOrganizer/Views/BoxControlAttachmentView.swift`
+- `DesktopOrganizer/Views/WorkspaceRealityView+Attachments.swift`
 - `DesktopOrganizer/Views/WorkspaceRealityView.swift`
 
 ### 핵심 아이디어
@@ -619,6 +620,64 @@ z:  0.17   사용자 쪽으로 살짝 앞으로
 ```
 
 버튼을 `selectedBoxRoot`의 자식으로 붙였기 때문에, 사용자가 박스를 드래그하면 버튼도 같이 따라간다.
+
+### ornament와 RealityKit attachment는 무엇이 다른가?
+
+이 버튼 바는 모양만 보면 visionOS의 `ornament`처럼 느껴질 수 있다. 하지만 구현 방식은 `ornament`가 아니라 `RealityView`의 `Attachment`다.
+
+둘의 가장 큰 차이는 "무엇에 붙는가"다.
+
+| 구분 | SwiftUI ornament | RealityKit attachment |
+|------|------------------|-----------------------|
+| 붙는 대상 | SwiftUI window, volume, view, scene | RealityKit entity 또는 RealityKit scene graph |
+| 좌표 기준 | 창/scene 주변 UI 위치 | 3D 공간 좌표 |
+| 부모가 움직일 때 | entity를 자동으로 따라가지 않음 | parent entity의 자식으로 붙이면 같이 움직임 |
+| WorldAnchor와의 궁합 | 약함 | 좋음 |
+| 이 앱의 박스 아래 버튼에 적합한가 | 부적합 | 적합 |
+
+`ornament`는 창 주변에 붙는 시스템 UI에 가깝다.
+
+```swift
+SomeView()
+    .ornament(attachmentAnchor: .scene(.bottom)) {
+        Button("설정") {
+            // window 주변의 보조 UI
+        }
+    }
+```
+
+이 코드는 SwiftUI view나 scene 주변에 버튼을 붙인다. 그래서 조작 패널 아래에 앱 설정 버튼을 붙이는 용도라면 좋다. 하지만 RealityKit 박스 entity가 책상 위에서 움직일 때, 이 버튼이 박스 아래를 따라다니지는 않는다.
+
+반면 `RealityView Attachment`는 SwiftUI View를 RealityKit에서 다룰 수 있는 attachment entity로 꺼낸다.
+
+```swift
+Attachment(id: "box-controls") {
+    Button("고정") {
+        // 특정 3D entity에 붙는 조작 UI
+    }
+}
+```
+
+그리고 update 단계에서 이 attachment entity를 박스 entity의 자식으로 붙인다.
+
+```swift
+if let controls = attachments.entity(for: "box-controls") {
+    boxRoot.addChild(controls)
+    controls.position = SIMD3<Float>(0, -0.12, 0.17)
+}
+```
+
+이렇게 하면 `controls`는 SwiftUI로 만든 버튼이지만, 배치는 RealityKit entity처럼 처리된다. 박스가 움직이면 child인 controls도 같이 움직인다.
+
+이 앱 기준으로 정리하면 아래와 같다.
+
+```text
+ControlPanel 창 주변 설정 버튼  -> ornament 후보
+박스 아래 [삭제] [이름] [고정] -> RealityKit attachment
+메모 아래 [닫기] [삭제] [고정] -> RealityKit attachment
+```
+
+즉, "3D 오브젝트의 오너먼트처럼 보이는 UI"를 만들 수는 있지만, 실제 구현은 SwiftUI `ornament`가 아니라 RealityKit attachment를 쓰는 편이 맞다.
 
 ### 직접 만들어보는 최소 예제
 
@@ -673,6 +732,9 @@ RealityView { content, attachments in
 
 - [Apple Developer - RealityView](https://developer.apple.com/documentation/realitykit/realityview)
 - [Apple Developer - Entity](https://developer.apple.com/documentation/realitykit/entity)
+- [Apple Developer - Attachment](https://developer.apple.com/documentation/realitykit/attachment)
+- [Apple Developer - ViewAttachmentEntity](https://developer.apple.com/documentation/realitykit/viewattachmententity)
+- [Apple Developer - ornament](https://developer.apple.com/documentation/swiftui/view/ornament(visibility:attachmentanchor:contentalignment:ornament:))
 - [Apple Developer - SwiftUI Button](https://developer.apple.com/documentation/swiftui/button)
 - [Apple Developer - glassBackgroundEffect](https://developer.apple.com/documentation/swiftui/view/glassbackgroundeffect(displaymode:))
 
@@ -1069,7 +1131,8 @@ memoList.position = SIMD3<Float>(0, 0.34, 0)
 파일:
 
 - `DesktopOrganizer/Views/WorkspaceRealityView.swift`
-- `DesktopOrganizer/Views/WorkspaceAttachmentViews.swift`
+- `DesktopOrganizer/Views/BoxMemoAttachmentView.swift`
+- `DesktopOrganizer/Views/WorkspaceRealityView+Attachments.swift`
 
 ### 핵심 아이디어
 
@@ -1182,7 +1245,6 @@ Button("저장") {
 let memo = MemoItem(
     text: trimmed,
     colorIndex: colorIndex,
-    cornerRadius: 12,
     containerBoxID: boxID
 )
 modelContext.insert(memo)
@@ -1191,8 +1253,8 @@ try modelContext.save()
 
 파일:
 
-- `DesktopOrganizer/Views/WorkspaceAttachmentViews.swift`
-- `DesktopOrganizer/Views/WorkspaceRealityView.swift`
+- `DesktopOrganizer/Views/BoxMemoAttachmentView.swift`
+- `DesktopOrganizer/Views/WorkspaceRealityView+Memos.swift`
 - `DesktopOrganizer/Models/MemoItem.swift`
 - `DesktopOrganizer/Models/MemoPalette.swift`
 - `DesktopOrganizer/Views/ColorButton.swift`
@@ -1330,8 +1392,8 @@ saveSpatialMemoState(statusText: "메모를 공간에 펼침")
 
 파일:
 
-- `DesktopOrganizer/Views/WorkspaceAttachmentViews.swift`
-- `DesktopOrganizer/Views/WorkspaceRealityView.swift`
+- `DesktopOrganizer/Views/BoxMemoAttachmentView.swift`
+- `DesktopOrganizer/Views/WorkspaceRealityView+Memos.swift`
 - `DesktopOrganizer/Views/WorkspaceRealityState.swift`
 - `DesktopOrganizer/Models/MemoItem.swift`
 
@@ -1561,8 +1623,9 @@ memoEntity.position = presentation.position
 파일:
 
 - `DesktopOrganizer/Views/WorkspaceRealityState.swift`
-- `DesktopOrganizer/Views/WorkspaceAttachmentViews.swift`
-- `DesktopOrganizer/Views/WorkspaceRealityView.swift`
+- `DesktopOrganizer/Views/SpatialMemoAttachmentViews.swift`
+- `DesktopOrganizer/Views/WorkspaceRealityView+Attachments.swift`
+- `DesktopOrganizer/Views/WorkspaceRealityView+Geometry.swift`
 
 ### 핵심 아이디어
 
@@ -1822,8 +1885,8 @@ saveSpatialMemoState(statusText: "공간 메모 위치 저장됨")
 
 파일:
 
-- `DesktopOrganizer/Views/WorkspaceAttachmentViews.swift`
-- `DesktopOrganizer/Views/WorkspaceRealityView.swift`
+- `DesktopOrganizer/Views/SpatialMemoAttachmentViews.swift`
+- `DesktopOrganizer/Views/WorkspaceRealityView+Memos.swift`
 - `DesktopOrganizer/Models/MemoItem.swift`
 
 ### 핵심 아이디어
